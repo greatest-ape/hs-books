@@ -25,7 +25,7 @@ data Book = Book {
 } deriving (Show)
 
 
-bookDirectory = "books"
+bookDirectory = "media/books"
 
 
 -- Read books, run CGI to display them
