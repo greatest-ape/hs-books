@@ -10,7 +10,7 @@ import qualified Text.Blaze.Html5 as Html5
 import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
 
 import Control.Monad (forM_)
-import Control.Monad.Error (ErrorT, runErrorT, liftIO)
+import Control.Monad.Error (runErrorT, liftIO)
 import Data.Either (rights)
 import Data.List (isInfixOf)
 import Data.String (fromString)
