@@ -64,13 +64,11 @@ booksToHtml books = do
 
             addCss "static/css/vendor/reset.css"
             addCss "static/css/main.css"
-            
+
             addJs "static/js/vendor/jquery-3.1.1.min.js"
             addJs "static/js/main.js"
 
-        Html5.body $ do
-            forM_ books $ \book -> do
-                Html5.p $ Html5.toHtml $ bookToHtml book
+        Html5.body $ forM_ books bookToHtml
 
     where
         addCss url =
