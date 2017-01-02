@@ -12,6 +12,7 @@ import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
 import Data.List (isInfixOf)
+import Data.Either (rights)
 import System.Directory (listDirectory)
 import Text.Blaze.Renderer.Utf8 (renderMarkup)
 
@@ -31,15 +32,13 @@ bookDirectory = "books"
 main :: IO ()
 main = do
     paths <- map ((bookDirectory ++ "/") ++ ) <$> listDirectory bookDirectory
-    eitherBooks <- runErrorT $ mapM readBook paths
+    books <- rights <$> mapM readBook paths
 
-    case eitherBooks of
-        Left  err   -> putStrLn "Error while reading books"
-        Right books -> displayHtmlAsCGI $ booksToHtml books
+    displayHtmlAsCGI $ booksToHtml books
 
 
-readBook :: FilePath -> ErrorT String IO Book
-readBook path = do
+readBook :: FilePath -> IO (Either String Book)
+readBook path = runErrorT $ do
     xmlString <- Epub.getPkgXmlFromZip path
 
     Book
