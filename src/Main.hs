@@ -68,7 +68,8 @@ booksToHtml books = do
             addJs "static/js/vendor/jquery-3.1.1.min.js"
             addJs "static/js/main.js"
 
-        Html5.body $ Html5.div Html5.! Html5.Attributes.class_ "books" $
+        Html5.body $ Html5.div Html5.! Html5.Attributes.class_ "books" $ do
+            Html5.h1 $ Html5.toHtml ("Books" :: String)
             forM_ books bookToHtml
 
     where
@@ -82,7 +83,7 @@ booksToHtml books = do
                 Html5.toHtml ("" :: String)
 
 bookToHtml :: Book -> Html5.Html
-bookToHtml book = (Html5.div Html5.! Html5.Attributes.class_ "book") $ do
+bookToHtml book = Html5.div Html5.! Html5.Attributes.class_ "book" $ do
     let titles      = map Epub.titleText $ Epub.metaTitles $ _metadata book
         creators    = map Epub.creatorText $ Epub.metaCreators $ _metadata book
         dates       = map (\(Epub.Date _ date) -> date) $ Epub.metaDates $ _metadata book
