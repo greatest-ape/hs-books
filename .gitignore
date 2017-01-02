@@ -4,4 +4,4 @@
 *.swp
 *.DS_Store
 
-*/books/*.epub
+*.epub
