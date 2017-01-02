@@ -61,13 +61,24 @@ booksToHtml books = do
     Html5.docTypeHtml $ do
         Html5.head $ do
             Html5.title $ Html5.toHtml ("Books" :: String)
-            Html5.link
-                Html5.! Html5.Attributes.rel "stylesheet"
-                Html5.! Html5.Attributes.href "static/css/main.css"
+
+            addCss "static/css/vendor/reset.css"
+            addCss "static/css/main.css"
+            addJs "static/js/main.js"
+
         Html5.body $ do
             forM_ books $ \book -> do
                 Html5.p $ Html5.toHtml $ bookToHtml book
 
+    where
+        addCss url =
+            Html5.link
+                Html5.! Html5.Attributes.rel "stylesheet"
+                Html5.! Html5.Attributes.href url
+
+        addJs url =
+            Html5.script Html5.! Html5.Attributes.src url $
+                Html5.toHtml ("" :: String)
 
 bookToHtml :: Book -> Html5.Html
 bookToHtml book = (Html5.div Html5.! Html5.Attributes.class_ "book") $ do
