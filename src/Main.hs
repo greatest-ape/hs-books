@@ -12,6 +12,7 @@ import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
 
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
+import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf)
 import Data.String (fromString)
@@ -114,4 +115,4 @@ getCoverImagePath (Epub.Manifest items) =
 
     where
         isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
-        isCover manifestItem = "cover" `isInfixOf` Epub.mfiHref manifestItem
+        isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
