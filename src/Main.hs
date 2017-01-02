@@ -64,6 +64,8 @@ booksToHtml books = do
 
             addCss "static/css/vendor/reset.css"
             addCss "static/css/main.css"
+            
+            addJs "static/js/vendor/jquery-3.1.1.min.js"
             addJs "static/js/main.js"
 
         Html5.body $ do
