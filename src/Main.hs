@@ -68,7 +68,8 @@ booksToHtml books = do
             addJs "static/js/vendor/jquery-3.1.1.min.js"
             addJs "static/js/main.js"
 
-        Html5.body $ forM_ books bookToHtml
+        Html5.body $ Html5.div Html5.! Html5.Attributes.class_ "books" $
+            forM_ books bookToHtml
 
     where
         addCss url =
