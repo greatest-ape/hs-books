@@ -68,9 +68,9 @@ getCoverImage filePath manifest =
         -- Look in all root level folders for the coverImagePath
         findEntry :: Zip.Archive -> FilePath -> Maybe Zip.Entry
         findEntry archive coverImagePath =
-            let folders = nub $ map (\path -> takeWhile (/= '/') path) $ Zip.filesInArchive archive
+            let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
                 paths = coverImagePath : map (\folder -> folder ++ "/" ++ coverImagePath) folders
-                entries = catMaybes $ map (\path -> Zip.findEntryByPath path archive) paths
+                entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
             in case entries of
                 (entry:_) -> Just entry
                 _         -> Nothing
