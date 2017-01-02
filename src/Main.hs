@@ -67,7 +67,7 @@ booksToHtml books = do
 
 
 bookToHtml :: Book -> Html5.Html
-bookToHtml book = Html5.div $ do
+bookToHtml book = (Html5.div Html5.! Html5.Attributes.class_ "book") $ do
     let titles      = map Epub.titleText $ Epub.metaTitles $ _metadata book
         creators    = map Epub.creatorText $ Epub.metaCreators $ _metadata book
         dates       = map (\(Epub.Date _ date) -> date) $ Epub.metaDates $ _metadata book
@@ -77,5 +77,5 @@ bookToHtml book = Html5.div $ do
     forM_ (take 1 titles) $
         (Html5.h2 Html5.! Html5.Attributes.class_ "title") . Html5.toHtml
 
-    forM_ (take 2 creators) $
+    forM_ (take 1 creators) $
         (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
