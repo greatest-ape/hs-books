@@ -16,7 +16,7 @@ import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
 import Data.Either (rights)
-import Data.List (isInfixOf)
+import Data.List (isInfixOf, nub)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import System.Directory (listDirectory)
@@ -68,7 +68,7 @@ getCoverImage filePath manifest =
         -- Look in all root level folders for the coverImagePath
         findEntry :: Zip.Archive -> FilePath -> Maybe Zip.Entry
         findEntry archive coverImagePath =
-            let folders = map (\path -> takeWhile (/= '/') path) $ Zip.filesInArchive archive
+            let folders = nub $ map (\path -> takeWhile (/= '/') path) $ Zip.filesInArchive archive
                 paths = coverImagePath : map (\folder -> folder ++ "/" ++ coverImagePath) folders
                 entries = catMaybes $ map (\path -> Zip.findEntryByPath path archive) paths
             in case entries of
