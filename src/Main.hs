@@ -2,17 +2,18 @@
 
 module Main where
 
-import qualified Network.CGI as CGI
 import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
+import qualified Network.CGI as CGI
 import qualified Text.Blaze.Html5 as Html5
 import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
 
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
-import Data.List (isInfixOf)
 import Data.Either (rights)
+import Data.List (isInfixOf)
+import Data.String (fromString)
 import System.Directory (listDirectory)
 import Text.Blaze.Renderer.Utf8 (renderMarkup)
 
@@ -60,6 +61,9 @@ booksToHtml books = do
     Html5.docTypeHtml $ do
         Html5.head $ do
             Html5.title $ Html5.toHtml ("Books" :: String)
+            Html5.link
+                Html5.! Html5.Attributes.rel "stylesheet"
+                Html5.! Html5.Attributes.href "static/css/main.css"
         Html5.body $ do
             forM_ books $ \book -> do
                 Html5.p $ Html5.toHtml $ bookToHtml book
@@ -73,8 +77,13 @@ bookToHtml book = (Html5.div Html5.! Html5.Attributes.class_ "book") $ do
         publishers  = Epub.metaPublishers $ _metadata book
         languages   = Epub.metaLangs $ _metadata book
 
-    forM_ (take 1 titles) $
-        (Html5.h2 Html5.! Html5.Attributes.class_ "title") . Html5.toHtml
+    -- Generate title
+    forM_ (take 1 titles) $ \title -> do
+        (Html5.h2 Html5.! Html5.Attributes.class_ "title") $
+            (Html5.a Html5.! Html5.Attributes.href (fromString $ _path book)) $
+                Html5.toHtml title
 
+    -- Generate author
     forM_ (take 1 creators) $
         (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
+
