@@ -2,10 +2,12 @@
 
 module Main where
 
+import qualified Codec.Archive.Zip as Zip
 import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
+import qualified Data.ByteString.Lazy as LBS
 import qualified Network.CGI as CGI
 import qualified Text.Blaze.Html5 as Html5
 import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
@@ -15,23 +17,24 @@ import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf)
+import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import System.Directory (listDirectory)
 import Text.Blaze.Renderer.Utf8 (renderMarkup)
 
 
 data Book = Book {
-    _path     :: FilePath,
-    _package  :: Epub.Package,
-    _metadata :: Epub.Metadata,
-    _manifest :: Epub.Manifest
+    _path            :: FilePath,
+    _maybeCoverImage :: Maybe LBS.ByteString,
+    _package         :: Epub.Package,
+    _metadata        :: Epub.Metadata
 } deriving (Show)
 
 
 bookDirectory = "media/books"
 
 
--- Read books, run CGI to display them
+-- Read books, extract info and cover images, run CGI to display data
 
 main :: IO ()
 main = do
@@ -44,12 +47,44 @@ main = do
 readBook :: FilePath -> IO (Either String Book)
 readBook path = runErrorT $ do
     xmlString <- Epub.getPkgXmlFromZip path
+    manifest  <- Epub.getManifest xmlString
 
     Book
         <$> return path
+        <*> liftIO (getCoverImage path manifest)
         <*> Epub.getPackage xmlString
         <*> Epub.getMetadata xmlString
-        <*> Epub.getManifest xmlString
+
+
+getCoverImage :: FilePath -> Epub.Manifest -> IO (Maybe LBS.ByteString)
+getCoverImage filePath manifest =
+    case getCoverImagePath manifest of
+        Just coverImagePath -> do
+            archive <- Zip.toArchive <$> LBS.readFile filePath
+            return $! fmap Zip.fromEntry $ findEntry archive coverImagePath
+        Nothing -> return Nothing
+
+    where
+        -- Look in all root level folders for the coverImagePath
+        findEntry :: Zip.Archive -> FilePath -> Maybe Zip.Entry
+        findEntry archive coverImagePath =
+            let folders = map (\path -> takeWhile (/= '/') path) $ Zip.filesInArchive archive
+                paths = coverImagePath : map (\folder -> folder ++ "/" ++ coverImagePath) folders
+                entries = catMaybes $ map (\path -> Zip.findEntryByPath path archive) paths
+            in case entries of
+                (entry:_) -> Just entry
+                _         -> Nothing
+
+
+getCoverImagePath :: Epub.Manifest -> Maybe FilePath
+getCoverImagePath (Epub.Manifest items) =
+    case filter (\item -> isImage item && isCover item) items of
+        (item:_) -> Just $ Epub.mfiHref item
+        _        -> Nothing
+
+    where
+        isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
+        isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
 
 
 displayHtmlAsCGI :: Html5.Html -> IO ()
@@ -104,15 +139,4 @@ bookToHtml book = Html5.div Html5.! Html5.Attributes.class_ "book" $ do
     forM_ (take 1 creators) $
         (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
 
-    Html5.p $ Html5.toHtml $ show $ getCoverImagePath $ _manifest book
-
-
-getCoverImagePath :: Epub.Manifest -> Maybe String
-getCoverImagePath (Epub.Manifest items) =
-    case filter (\item -> isImage item && isCover item) items of
-        (item:_) -> Just $ Epub.mfiHref item
-        _        -> Nothing
-
-    where
-        isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
-        isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
+    Html5.p $ Html5.toHtml $ show $ fmap LBS.length $ _maybeCoverImage book

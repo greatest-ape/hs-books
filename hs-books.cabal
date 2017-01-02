@@ -20,7 +20,9 @@ executable hs-books
   build-depends:       base >= 4.7 && < 5
                      , blaze-html
                      , blaze-markup
+                     , bytestring
                      , cgi
                      , directory
                      , epub-metadata
                      , mtl
+                     , zip-archive
