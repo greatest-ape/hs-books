@@ -1,6 +1,6 @@
 name:                hs-books
 version:             0.1.0.0
-synopsis:            CGI app for displaying a list of epub books in HTML
+synopsis:            CGI app for displaying a HTML list of .epub books in a directory
 description:         Please see README.md
 homepage:            https://github.com/githubuser/hs-books#readme
 license:             BSD3
