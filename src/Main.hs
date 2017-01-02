@@ -3,6 +3,7 @@
 module Main where
 
 import qualified Codec.Epub as Epub
+import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
 import qualified Network.CGI as CGI
@@ -21,7 +22,8 @@ import Text.Blaze.Renderer.Utf8 (renderMarkup)
 data Book = Book {
     _path     :: FilePath,
     _package  :: Epub.Package,
-    _metadata :: Epub.Metadata
+    _metadata :: Epub.Metadata,
+    _manifest :: Epub.Manifest
 } deriving (Show)
 
 
@@ -46,6 +48,7 @@ readBook path = runErrorT $ do
         <$> return path
         <*> Epub.getPackage xmlString
         <*> Epub.getMetadata xmlString
+        <*> Epub.getManifest xmlString
 
 
 displayHtmlAsCGI :: Html5.Html -> IO ()
@@ -100,3 +103,15 @@ bookToHtml book = Html5.div Html5.! Html5.Attributes.class_ "book" $ do
     forM_ (take 1 creators) $
         (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
 
+    Html5.p $ Html5.toHtml $ show $ getCoverImagePath $ _manifest book
+
+
+getCoverImagePath :: Epub.Manifest -> Maybe String
+getCoverImagePath (Epub.Manifest items) =
+    case filter (\item -> isImage item && isCover item) items of
+        (item:_) -> Just $ Epub.mfiHref item
+        _        -> Nothing
+
+    where
+        isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
+        isCover manifestItem = "cover" `isInfixOf` Epub.mfiHref manifestItem
