@@ -41,7 +41,7 @@ main = do
     paths <- map ((bookDirectory ++ "/") ++ ) <$> listDirectory bookDirectory
     books <- rights <$> mapM readBook paths
 
-    displayHtmlAsCGI $ booksToHtml books
+    sendHtmlThroughCGI $ booksToHtml books
 
 
 readBook :: FilePath -> IO (Either String Book)
@@ -82,8 +82,8 @@ getCoverImagePath (Epub.Manifest items) =
         isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
 
 
-displayHtmlAsCGI :: Html5.Html -> IO ()
-displayHtmlAsCGI f = CGI.runCGI $ do
+sendHtmlThroughCGI :: Html5.Html -> IO ()
+sendHtmlThroughCGI f = CGI.runCGI $ do
     CGI.setHeader "Content-type" "text/html; charset=UTF-8"
     CGI.outputFPS $ renderMarkup f
 
