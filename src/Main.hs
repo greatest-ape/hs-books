@@ -70,17 +70,12 @@ getCoverImage filePath manifest =
         findEntry archive coverImagePath =
             let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
                 paths = coverImagePath : map (\folder -> folder ++ "/" ++ coverImagePath) folders
-                entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
-            in case entries of
-                (entry:_) -> Just entry
-                _         -> Nothing
+            in maybeHead $ catMaybes $ map (flip Zip.findEntryByPath archive) paths
 
 
 getCoverImagePath :: Epub.Manifest -> Maybe FilePath
 getCoverImagePath (Epub.Manifest items) =
-    case filter (\item -> isImage item && isCover item) items of
-        (item:_) -> Just $ Epub.mfiHref item
-        _        -> Nothing
+    fmap Epub.mfiHref $ maybeHead $ filter (\i -> isCover i && isImage i) items
 
     where
         isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
@@ -140,3 +135,10 @@ bookToHtml book = Html5.div Html5.! Html5.Attributes.class_ "book" $ do
         (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
 
     Html5.p $ Html5.toHtml $ show $ fmap LBS.length $ _maybeCoverImage book
+
+
+-- * Utils
+
+maybeHead :: [a] -> Maybe a
+maybeHead (x:_) = Just x
+maybeHead _     = Nothing
