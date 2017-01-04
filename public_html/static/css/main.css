@@ -16,7 +16,7 @@ html {
     overflow: hidden;
 
     float: left;
-    width: 80%;
+    width: calc(80% - 4rem);
     margin: auto;
 
     margin-left: 2rem;
@@ -50,7 +50,7 @@ html {
 
 #creators {
     float: left;
-    width: calc(20% - 2rem);
+    width: 20%;
     padding-top: 2rem;
 }
     #creators .creator {

@@ -1,23 +1,25 @@
 var App = function(books){
     var self = {};
+    
+    self._books = [];
+    self._creators = {};
 
     self.init = function(books){
-        var creators = self.buildCreators(books);
+        self.creators = self.buildCreators(books);
         
-        self.renderCreators(creators);
-        self.renderBooks(creators);
+        self.renderCreators();
+        self.renderBooks();
     };
     
     self.buildCreators = function(books){
-        
         var creators = {};
 
         // Add books to their creator
         
         $.each(books, function(i, book){
-            var creator = books[i]._creators[0]._name;
+            var creator = book._creators[0]._name;
 
-            if (!creators[creator]){
+            if (!(creator in creators)){
                 creators[creator] = [];
             }
 
@@ -26,10 +28,8 @@ var App = function(books){
         
         // Sort books within the creators
         
-        var creators_sorted = creators;
-
-        $.each(creators, function(creator, books){
-            books.sort(function(book1, book2) {
+        Object.keys(creators).map(function(key, index){
+            creators[key].sort(function(book1, book2) {
                 var title1 = book1._titles[0];
                 var title2 = book2._titles[0];
 
@@ -43,25 +43,23 @@ var App = function(books){
                     return 0;
                 }
             });
-            
-            creators_sorted[creator] = books;
         });
         
-        return creators_sorted;
+        return creators;
     };
     
-    self.renderCreators = function(creators){
-        var creator_list = Object.keys(creators);
+    self.renderCreators = function(){
+        var creator_list = Object.keys(self.creators);
         creator_list.sort();
 
         $.each(creator_list, function(i, creator) {
-            var books = creators[creator];
+            var books = self.creators[creator];
             
             var $creator = $('.prototype-creator').clone();
 
             $creator.removeClass('prototype-creator').addClass('creator');
 
-            $creator.find('.name').html(creator + ' (' + books.length + ')');
+            $creator.find('.name').html(creator);
             
             $.each(books, function(i, book){
                 var $book = $('.prototype-creator-book').clone();
@@ -76,12 +74,12 @@ var App = function(books){
         });
     };
     
-    self.renderBooks = function(creators){
-        var creator_list = Object.keys(creators);
+    self.renderBooks = function(){
+        var creator_list = Object.keys(self.creators);
         creator_list.sort();
         
         $.each(creator_list, function(i, creator){
-            var books = creators[creator];
+            var books = self.creators[creator];
             
             $.each(books, function(i, book){
                 var $book = $('.prototype-book').clone();
