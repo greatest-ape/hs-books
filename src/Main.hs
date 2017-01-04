@@ -11,7 +11,6 @@ import qualified Codec.Epub.Data.Package as Epub
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy as LBS
-import qualified Network.CGI as CGI
 
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
@@ -79,9 +78,9 @@ main = do
     paths <- map ((bookDirectory ++ "/") ++ ) <$> listDirectory bookDirectory
     books <- rights <$> mapM readBook paths
 
-    CGI.runCGI $ do
-        CGI.setHeader "Content-type" "text/json; charset=UTF-8"
-        CGI.outputFPS $ JSON.encode books
+    -- Outputting headers and a body to stdout is CGI compatible
+    putStrLn "Content-type: text/json; charset=UTF-8\n"
+    LBS.putStr $ JSON.encode books
 
 
 -- Attempt to create a Book from a file path to an epub file

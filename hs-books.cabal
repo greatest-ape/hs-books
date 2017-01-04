@@ -21,7 +21,6 @@ executable hs-books
                      , base >= 4.7 && < 5
                      , base64-bytestring
                      , bytestring
-                     , cgi
                      , directory
                      , epub-metadata
                      , mtl
