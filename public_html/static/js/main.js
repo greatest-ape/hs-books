@@ -60,7 +60,7 @@ var App = function(books){
                 var $book = $('.prototype-creator-book').clone();
                 
                 $book.removeClass('prototype-creator-book').addClass('book');
-                $book.html(book._titles[0]);
+                $book.find('a').attr('href', book._path).html(book._titles[0]);
                 
                 $creator.find('.books').append($book)
             });
