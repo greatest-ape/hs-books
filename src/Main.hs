@@ -87,17 +87,17 @@ main = do
 -- Attempt to create a Book from a file path to an epub file
 readBook :: FilePath -> IO (Either String Book)
 readBook path = runErrorT $ do
-    xmlString <- Epub.getPkgXmlFromZip path
-    manifest  <- Epub.getManifest xmlString
-    package   <- Epub.getPackage xmlString
-    metadata  <- Epub.getMetadata xmlString
+    xmlString       <- Epub.getPkgXmlFromZip path
+    manifest        <- Epub.getManifest xmlString
+    package         <- Epub.getPackage xmlString
+    metadata        <- Epub.getMetadata xmlString
 
     maybeCoverImage <- liftIO $ getCoverImage path manifest
 
-    let titles     = map Epub.titleText $ Epub.metaTitles metadata
-        creators   = map toCreator $ Epub.metaCreators metadata
-        dates      = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
-        publishers = Epub.metaPublishers metadata
+    let titles      = map Epub.titleText $ Epub.metaTitles metadata
+        creators    = map toCreator $ Epub.metaCreators metadata
+        dates       = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
+        publishers  = Epub.metaPublishers metadata
 
     return $ Book {
         _path       = path,
