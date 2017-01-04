@@ -87,7 +87,7 @@ a:hover, a:active, a:focus {
                 text-indent: 0;
                 margin-left: 0;
             }
-
-.prototype-book {
+            
+#prototypes {
     display: none;
 }
