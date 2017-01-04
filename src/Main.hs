@@ -17,7 +17,7 @@ import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
 import Data.Either (rights)
-import Data.List (isInfixOf, nub, scanl')
+import Data.List (isInfixOf, nub, scanl', words, unwords)
 import Data.List.Split (splitOn)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
@@ -89,7 +89,7 @@ readBook path = runErrorT $ do
     maybeCoverImage <- liftIO $ getCoverImage path manifest
 
     let titles      = map Epub.titleText $ Epub.metaTitles metadata
-        creators    = map toCreator $ Epub.metaCreators metadata
+        creators    = map extractNameWithComma $ Epub.metaCreators metadata
         dates       = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
         publishers  = Epub.metaPublishers metadata
 
@@ -103,10 +103,29 @@ readBook path = runErrorT $ do
     }
 
     where
-        toCreator creator =
-            case Epub.creatorFileAs creator of
-                Just fileAs -> fileAs
-                Nothing     -> Epub.creatorText creator
+        extractNameWithoutComma creator =
+            let name = case Epub.creatorFileAs creator of
+                    Just fileAs -> fileAs
+                    Nothing     -> Epub.creatorText creator
+                parts = splitOn "," name
+            in
+                if length parts > 1
+                    then concat (tail parts) ++ " " ++ head parts
+                    else name
+
+        extractNameWithComma creator =
+            let name = case Epub.creatorFileAs creator of
+                    Just fileAs -> fileAs
+                    Nothing     -> Epub.creatorText creator
+            in case length $ splitOn "," name of
+                1 -> buildNameWithComma name
+                2 -> name
+                3 -> Epub.creatorText creator -- Absolute edge case
+
+        -- Format a name without a comma "LAST NAME, FIRST NAME(S)"
+        buildNameWithComma name =
+            let parts = map (filter (/= ',')) $ words name
+            in last parts ++ ", " ++ unwords (init parts)
 
 
 -- * Cover images
