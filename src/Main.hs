@@ -7,10 +7,9 @@ import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
+-- import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy as LBS
 import qualified Network.CGI as CGI
-import qualified Text.Blaze.Html5 as Html5
-import qualified Text.Blaze.Html5.Attributes as Html5.Attributes
 
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
@@ -20,121 +19,102 @@ import Data.List (isInfixOf, nub)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import System.Directory (listDirectory)
-import Text.Blaze.Renderer.Utf8 (renderMarkup)
+
+
+
+data Cover = Cover {
+    _mediaTypes :: String,
+    _image      :: LBS.ByteString
+} deriving (Show)
 
 
 data Book = Book {
-    _path            :: FilePath,
-    _maybeCoverImage :: Maybe LBS.ByteString,
-    _package         :: Epub.Package,
-    _metadata        :: Epub.Metadata
+    _path       :: FilePath,
+    _maybeCover :: Maybe Cover,
+    _titles     :: [String],
+    _creators   :: [Epub.Creator],
+    _dates      :: [String],
+    _publishers :: [String]
 } deriving (Show)
 
 
 bookDirectory = "media/books"
 
 
--- Read books, extract info and cover images, run CGI to display data
-
+-- Read epub files, parse them into the Book datatype, convert them to JSON
+-- and send them to the client through CGI
 main :: IO ()
 main = do
     paths <- map ((bookDirectory ++ "/") ++ ) <$> listDirectory bookDirectory
     books <- rights <$> mapM readBook paths
 
-    sendHtmlThroughCGI $ booksToHtml books
+    CGI.runCGI $ do
+        CGI.setHeader "Content-type" "text/json; charset=UTF-8"
+        CGI.outputFPS $ booksToJSON books
 
 
 readBook :: FilePath -> IO (Either String Book)
 readBook path = runErrorT $ do
     xmlString <- Epub.getPkgXmlFromZip path
     manifest  <- Epub.getManifest xmlString
+    package   <- Epub.getPackage xmlString
+    metadata  <- Epub.getMetadata xmlString
 
-    Book
-        <$> return path
-        <*> liftIO (getCoverImage path manifest)
-        <*> Epub.getPackage xmlString
-        <*> Epub.getMetadata xmlString
+    maybeCoverImage <- liftIO $ getCoverImage path manifest
 
+    let titles     = map Epub.titleText $ Epub.metaTitles metadata
+        creators   = Epub.metaCreators metadata
+        dates      = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
+        publishers = Epub.metaPublishers metadata
 
-getCoverImage :: FilePath -> Epub.Manifest -> IO (Maybe LBS.ByteString)
-getCoverImage filePath manifest =
-    case getCoverImagePath manifest of
-        Just coverImagePath -> do
-            archive <- Zip.toArchive <$> LBS.readFile filePath
-            return $! fmap Zip.fromEntry $ findEntry archive coverImagePath
-        Nothing -> return Nothing
-
-    where
-        -- Look in all root level folders for the coverImagePath
-        findEntry :: Zip.Archive -> FilePath -> Maybe Zip.Entry
-        findEntry archive coverImagePath =
-            let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
-                paths = coverImagePath : map (\folder -> folder ++ "/" ++ coverImagePath) folders
-            in maybeHead $ catMaybes $ map (flip Zip.findEntryByPath archive) paths
+    return $ Book {
+        _path       = path,
+        _maybeCover = maybeCoverImage,
+        _titles     = titles,
+        _creators   = creators,
+        _dates      = dates,
+        _publishers = publishers
+    }
 
 
-getCoverImagePath :: Epub.Manifest -> Maybe FilePath
-getCoverImagePath (Epub.Manifest items) =
-    fmap Epub.mfiHref $ maybeHead $ filter (\i -> isCover i && isImage i) items
+
+-- * Cover images
+
+
+-- Given an archive path and a epub manifest, try to find a cover image
+getCoverImage :: FilePath -> Epub.Manifest -> IO (Maybe Cover)
+getCoverImage archivePath manifest = do
+    archive <- Zip.toArchive <$> LBS.readFile archivePath
+
+    return $ do
+        manifestItem <- getCoverManifestItem manifest
+        image        <- findFileInArchive archive $ Epub.mfiHref manifestItem
+        Just $ Cover (Epub.mfiMediaType manifestItem) image
+
+
+-- Given an epub manifest, attempts to find a cover image
+getCoverManifestItem :: Epub.Manifest -> Maybe Epub.ManifestItem
+getCoverManifestItem (Epub.Manifest items) =
+    maybeHead $ filter (\i -> isCover i && isImage i) items
 
     where
         isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
         isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
 
 
-sendHtmlThroughCGI :: Html5.Html -> IO ()
-sendHtmlThroughCGI f = CGI.runCGI $ do
-    CGI.setHeader "Content-type" "text/html; charset=UTF-8"
-    CGI.outputFPS $ renderMarkup f
+-- Extract a file in a zip archive by the file path. Looks in all root level
+-- folders
+findFileInArchive :: Zip.Archive -> FilePath -> Maybe LBS.ByteString
+findFileInArchive archive path =
+    let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
+        paths   = path : map (\folder -> folder ++ "/" ++ path) folders
+        entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
+    in fmap Zip.fromEntry $ maybeHead entries
 
 
--- * Generation of HTML from books
+-- * Generation of JSON from books
 
-booksToHtml :: [Book] -> Html5.Html
-booksToHtml books = do
-    Html5.docTypeHtml $ do
-        Html5.head $ do
-            Html5.title $ Html5.toHtml ("Books" :: String)
-
-            addCss "static/css/vendor/reset.css"
-            addCss "static/css/main.css"
-
-            addJs "static/js/vendor/jquery-3.1.1.min.js"
-            addJs "static/js/main.js"
-
-        Html5.body $ Html5.div Html5.! Html5.Attributes.class_ "books" $ do
-            Html5.h1 $ Html5.toHtml ("Books" :: String)
-            forM_ books bookToHtml
-
-    where
-        addCss url =
-            Html5.link
-                Html5.! Html5.Attributes.rel "stylesheet"
-                Html5.! Html5.Attributes.href url
-
-        addJs url =
-            Html5.script Html5.! Html5.Attributes.src url $
-                Html5.toHtml ("" :: String)
-
-bookToHtml :: Book -> Html5.Html
-bookToHtml book = Html5.div Html5.! Html5.Attributes.class_ "book" $ do
-    let titles      = map Epub.titleText $ Epub.metaTitles $ _metadata book
-        creators    = map Epub.creatorText $ Epub.metaCreators $ _metadata book
-        dates       = map (\(Epub.Date _ date) -> date) $ Epub.metaDates $ _metadata book
-        publishers  = Epub.metaPublishers $ _metadata book
-        languages   = Epub.metaLangs $ _metadata book
-
-    -- Generate title
-    forM_ (take 1 titles) $ \title -> do
-        (Html5.h2 Html5.! Html5.Attributes.class_ "title") $
-            (Html5.a Html5.! Html5.Attributes.href (fromString $ _path book)) $
-                Html5.toHtml title
-
-    -- Generate author
-    forM_ (take 1 creators) $
-        (Html5.h2 Html5.! Html5.Attributes.class_ "creator") . Html5.toHtml
-
-    Html5.p $ Html5.toHtml $ show $ fmap LBS.length $ _maybeCoverImage book
+booksToJSON books = undefined
 
 
 -- * Utils
