@@ -50,14 +50,16 @@ a:hover, a:active, a:focus {
             max-height: 100%;
             max-width: 100%;
         }
-    #books .book .title {
+    #books .book .creator {
         margin-top: 1rem;
-        line-height: inherit;
 
         font-weight: bold;
     }
-    #books .book .creator {
+    #books .book .title {
         margin-top: 0.5rem;
+
+        font-weight: normal;
+        line-height: 1.5rem;
     }
 
 #creators {
