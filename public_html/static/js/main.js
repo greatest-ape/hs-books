@@ -86,7 +86,7 @@ var App = function(books){
                 }
 
                 $book.find('.title').html(book._titles[0]);
-                $book.find('.creator').html(book._creators[0]._name);
+                $book.find('.creator').html(book._creators[0]);
 
                 $('#books').append($book);
             });
