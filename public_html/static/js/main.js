@@ -1,4 +1,4 @@
-var App = function(books){
+var App = function($, books){
     var self = {};
     
     self._books = [];
@@ -116,7 +116,7 @@ var App = function(books){
 (function($){
     $(function(){
         $.getJSON('app.cgi', function(books){
-            App(books);
+            App($, books);
         });
     });
 })(jQuery);
