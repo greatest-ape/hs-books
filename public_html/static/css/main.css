@@ -4,13 +4,22 @@ html {
     line-height: 2rem;
 }
 
+#all {
+    clear: both;
+    overflow: hidden;
+
+    width: 100%;
+}
+
 #books {
     clear: both;
     overflow: hidden;
-    width: 75rem;
+
+    float: left;
+    width: 80%;
     margin: auto;
 
-    margin-left: -1rem;
+    margin-bottom: 2rem;
 }
 
 .book {
@@ -35,6 +44,15 @@ html {
         font-weight: bold;
     }
     .book .creator {
+        margin-top: 0.5rem;
+    }
+
+#creators {
+    float: left;
+    width: calc(20% - 2rem);
+    padding-top: 2rem;
+}
+    .creator {
         margin-top: 0.5rem;
     }
 
