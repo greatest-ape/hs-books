@@ -17,7 +17,8 @@ import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
 import Data.Either (rights)
-import Data.List (isInfixOf, nub)
+import Data.List (isInfixOf, nub, scanl')
+import Data.List.Split (splitOn)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import GHC.Generics (Generic)
@@ -142,11 +143,24 @@ getCoverManifestItem (Epub.Manifest items) =
 -- folders
 findFileInArchive :: Zip.Archive -> FilePath -> Maybe LBS.ByteString
 findFileInArchive archive path =
-    let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
+    let folders = nub $ extractFolders $ Zip.filesInArchive archive
         paths   = path : map (\folder -> folder ++ "/" ++ path) folders
         entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
     in Zip.fromEntry <$> maybeHead entries
 
+
+-- Take a list of paths, return those who seem to be folders
+extractFolders :: [FilePath] -> [FilePath]
+extractFolders paths = paths >>= f
+    where
+        f path =
+            let parts       = splitOn "/" path
+                l           = length parts
+                folderParts = take (l - 1) parts
+            in
+                if l > 1
+                    then scanl' (\a b -> a ++ "/" ++ b) "" folderParts
+                    else []
 
 
 -- * Utils

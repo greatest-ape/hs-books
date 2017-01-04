@@ -24,4 +24,6 @@ executable hs-books
                      , directory
                      , epub-metadata
                      , mtl
+                     , split
                      , zip-archive
+
