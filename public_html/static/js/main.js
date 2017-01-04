@@ -9,6 +9,8 @@ var App = function(books){
         
         self.renderCreators();
         self.renderBooks();
+        
+        self.makeCreatorsGoToBottom();
     };
     
     self.buildCreators = function(books){
@@ -100,6 +102,10 @@ var App = function(books){
         $.each(keys, function(i, key){
             f(key, dict[key]);
         });
+    };
+    
+    self.makeCreatorsGoToBottom = function(){
+        $('#creators').height($(document).height());
     };
     
     self.init(books);
