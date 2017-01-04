@@ -6,12 +6,11 @@ html {
 }
 
 a:link, a:visited {
-    color: inherit;
-    text-decoration: underline;
+    color: #2f3e81;
+    text-decoration: none;
 }
 
 a:hover, a:active, a:focus {
-    color: #666;
     text-decoration: underline;
 }
 
@@ -79,13 +78,15 @@ a:hover, a:active, a:focus {
             margin-top: 0.5rem;
             margin-left: 1rem;
             padding-left: 1rem;
-            line-height: 1.5rem;
+            line-height: 2rem;
             list-style-type: circle;
             list-style-position: outside;
         }
             #creators .creator .books .book {
                 text-indent: 0;
                 margin-left: 0;
+                line-height: 1.5rem;
+                margin-bottom: 0.5rem;
             }
             
 #prototypes {
