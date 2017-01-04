@@ -9,8 +9,9 @@ import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
 import qualified Data.Aeson as JSON
-import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Base64.Lazy as Base64
+import qualified Data.ByteString.Lazy.Char8 as Char8
 
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
@@ -53,7 +54,7 @@ data Book = Book {
 
 
 instance JSON.ToJSON LBS.ByteString where
-    toJSON = JSON.toJSON . LBS.unpack . Base64.encode
+    toJSON = JSON.toJSON . Char8.unpack . Base64.encode
 
 instance JSON.ToJSON Cover
 instance JSON.ToJSON Creator
