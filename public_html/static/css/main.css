@@ -1,7 +1,15 @@
 html {
-    font-family: georgia, serif;
+    font-family: "Raleway", georgia, serif;
     font-size: 16px;
     line-height: 2rem;
+}
+
+a:link, a:visited {
+    text-decoration: none;
+}
+
+a:hover, a:active, a:focus {
+    text-decoration: none;
 }
 
 #all {
@@ -16,10 +24,11 @@ html {
     overflow: hidden;
 
     float: left;
-    width: calc(80% - 4rem);
+    width: calc(80% - 4rem - 2px);
     margin: auto;
 
     margin-left: 2rem;
+    margin-right: 1rem;
     margin-bottom: 2rem;
 }
 
@@ -52,6 +61,9 @@ html {
     float: left;
     width: 20%;
     padding-top: 2rem;
+    padding-left: 1rem;
+    font-size: 14px;
+    border-left: 2px solid #ccc;
 }
     #creators .creator {
         margin-bottom: 1rem;
