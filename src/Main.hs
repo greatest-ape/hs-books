@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveGeneric #-}
 
 module Main where
 
@@ -7,7 +8,8 @@ import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
--- import qualified Data.Aeson as JSON
+import qualified Data.Aeson as JSON
+import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy as LBS
 import qualified Network.CGI as CGI
 
@@ -18,27 +20,56 @@ import Data.Either (rights)
 import Data.List (isInfixOf, nub)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
+import GHC.Generics (Generic)
 import System.Directory (listDirectory)
 
 
+-- * Types
+
 
 data Cover = Cover {
-    _mediaTypes :: String,
+    _mediaType  :: String,
     _image      :: LBS.ByteString
-} deriving (Show)
+} deriving (Generic, Show)
+
+
+data Creator = Creator {
+    _name       :: String,
+    _fileAs     :: Maybe String
+} deriving (Generic, Show)
 
 
 data Book = Book {
     _path       :: FilePath,
     _maybeCover :: Maybe Cover,
     _titles     :: [String],
-    _creators   :: [Epub.Creator],
+    _creators   :: [Creator],
     _dates      :: [String],
     _publishers :: [String]
-} deriving (Show)
+} deriving (Generic, Show)
+
+
+
+-- * Instances
+
+
+instance JSON.ToJSON LBS.ByteString where
+    toJSON = JSON.toJSON . LBS.unpack . Base64.encode
+
+instance JSON.ToJSON Cover
+instance JSON.ToJSON Creator
+instance JSON.ToJSON Book
+
+
+
+-- * Settings
 
 
 bookDirectory = "media/books"
+
+
+
+-- * Start of main program
 
 
 -- Read epub files, parse them into the Book datatype, convert them to JSON
@@ -50,7 +81,7 @@ main = do
 
     CGI.runCGI $ do
         CGI.setHeader "Content-type" "text/json; charset=UTF-8"
-        CGI.outputFPS $ booksToJSON books
+        CGI.outputFPS $ JSON.encode books
 
 
 -- Attempt to create a Book from a file path to an epub file
@@ -64,7 +95,7 @@ readBook path = runErrorT $ do
     maybeCoverImage <- liftIO $ getCoverImage path manifest
 
     let titles     = map Epub.titleText $ Epub.metaTitles metadata
-        creators   = Epub.metaCreators metadata
+        creators   = map toCreator $ Epub.metaCreators metadata
         dates      = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
         publishers = Epub.metaPublishers metadata
 
@@ -76,6 +107,10 @@ readBook path = runErrorT $ do
         _dates      = dates,
         _publishers = publishers
     }
+
+    where
+        toCreator creator =
+            Creator (Epub.creatorText creator) (Epub.creatorFileAs creator)
 
 
 
@@ -111,11 +146,6 @@ findFileInArchive archive path =
         paths   = path : map (\folder -> folder ++ "/" ++ path) folders
         entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
     in fmap Zip.fromEntry $ maybeHead entries
-
-
--- * Generation of JSON from books
-
-booksToJSON books = undefined
 
 
 -- * Utils
