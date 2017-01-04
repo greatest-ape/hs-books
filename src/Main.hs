@@ -132,11 +132,12 @@ getCoverImage archivePath manifest = do
 -- Given an epub manifest, attempts to find a cover image
 getCoverManifestItem :: Epub.Manifest -> Maybe Epub.ManifestItem
 getCoverManifestItem (Epub.Manifest items) =
-    maybeHead $ filter (\item -> isCover item && isImage item) items
+    maybeHead $ filter (\i -> isImage i && (hasCoverInHref i || hasCoverInID i)) items
 
     where
         isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
-        isCover manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
+        hasCoverInHref manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
+        hasCoverInID manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
 
 
 -- Extract a file in a zip archive by the file path. Looks in all root level
