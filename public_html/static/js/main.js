@@ -49,12 +49,7 @@ var App = function(books){
     };
     
     self.renderCreators = function(){
-        var creator_list = Object.keys(self.creators);
-        creator_list.sort();
-
-        $.each(creator_list, function(i, creator) {
-            var books = self.creators[creator];
-            
+        self.iterate_over_dict_sorted(self.creators, function(creator, books) {
             var $creator = $('.prototype-creator').clone();
 
             $creator.removeClass('prototype-creator').addClass('creator');
@@ -75,12 +70,7 @@ var App = function(books){
     };
     
     self.renderBooks = function(){
-        var creator_list = Object.keys(self.creators);
-        creator_list.sort();
-        
-        $.each(creator_list, function(i, creator){
-            var books = self.creators[creator];
-            
+        self.iterate_over_dict_sorted(self.creators, function(creator, books){
             $.each(books, function(i, book){
                 var $book = $('.prototype-book').clone();
 
@@ -100,6 +90,15 @@ var App = function(books){
 
                 $('#books').append($book);
             });
+        });
+    };
+    
+    self.iterate_over_dict_sorted = function(dict, f){
+        var keys = Object.keys(dict);
+        keys.sort();
+        
+        $.each(keys, function(i, key){
+            f(key, dict[key]);
         });
     };
     
