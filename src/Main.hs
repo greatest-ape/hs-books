@@ -131,7 +131,7 @@ getCoverImage archivePath manifest = do
 -- Given an epub manifest, attempts to find a cover image
 getCoverManifestItem :: Epub.Manifest -> Maybe Epub.ManifestItem
 getCoverManifestItem (Epub.Manifest items) =
-    maybeHead $ filter (\i -> isCover i && isImage i) items
+    maybeHead $ filter (\item -> isCover item && isImage item) items
 
     where
         isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
@@ -145,7 +145,7 @@ findFileInArchive archive path =
     let folders = nub $ map (takeWhile (/= '/')) $ Zip.filesInArchive archive
         paths   = path : map (\folder -> folder ++ "/" ++ path) folders
         entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
-    in fmap Zip.fromEntry $ maybeHead entries
+    in Zip.fromEntry <$> maybeHead entries
 
 
 
