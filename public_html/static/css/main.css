@@ -5,11 +5,13 @@ html {
 }
 
 a:link, a:visited {
-    text-decoration: none;
+    color: inherit;
+    text-decoration: underline;
 }
 
 a:hover, a:active, a:focus {
-    text-decoration: none;
+    color: #555;
+    text-decoration: underline;
 }
 
 #all {
