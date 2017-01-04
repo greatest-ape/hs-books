@@ -34,17 +34,11 @@ data Cover = Cover {
 } deriving (Generic, Show)
 
 
-data Creator = Creator {
-    _name       :: String,
-    _fileAs     :: Maybe String
-} deriving (Generic, Show)
-
-
 data Book = Book {
     _path       :: FilePath,
     _maybeCover :: Maybe Cover,
     _titles     :: [String],
-    _creators   :: [Creator],
+    _creators   :: [String],
     _dates      :: [String],
     _publishers :: [String]
 } deriving (Generic, Show)
@@ -58,7 +52,6 @@ instance JSON.ToJSON LBS.ByteString where
     toJSON = JSON.toJSON . Char8.unpack . Base64.encode
 
 instance JSON.ToJSON Cover
-instance JSON.ToJSON Creator
 instance JSON.ToJSON Book
 
 
@@ -111,8 +104,9 @@ readBook path = runErrorT $ do
 
     where
         toCreator creator =
-            Creator (Epub.creatorText creator) (Epub.creatorFileAs creator)
-
+            case Epub.creatorFileAs creator of
+                Just fileAs -> fileAs
+                Nothing     -> Epub.creatorText creator
 
 
 -- * Cover images

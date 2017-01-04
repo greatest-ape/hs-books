@@ -17,7 +17,7 @@ var App = function(books){
         // Add books to their creator
         
         $.each(books, function(i, book){
-            var creator = book._creators[0]._name;
+            var creator = book._creators[0];
 
             if (!(creator in creators)){
                 creators[creator] = [];
