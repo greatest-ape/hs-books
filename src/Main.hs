@@ -148,7 +148,9 @@ findFileInArchive archive path =
     in fmap Zip.fromEntry $ maybeHead entries
 
 
+
 -- * Utils
+
 
 maybeHead :: [a] -> Maybe a
 maybeHead (x:_) = Just x
