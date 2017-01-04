@@ -53,6 +53,7 @@ main = do
         CGI.outputFPS $ booksToJSON books
 
 
+-- Attempt to create a Book from a file path to an epub file
 readBook :: FilePath -> IO (Either String Book)
 readBook path = runErrorT $ do
     xmlString <- Epub.getPkgXmlFromZip path
