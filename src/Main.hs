@@ -145,7 +145,7 @@ extractNameWithComma creator =
 getCoverImage :: FilePath -> Epub.Manifest -> String -> IO (Maybe Cover)
 getCoverImage archivePath manifest identifier = do
     let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".jpg"
-        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
+        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
         justCover      = Just $ Cover fullsizePath thumbnailPath
 
     fileExists <- doesFileExist thumbnailPath
@@ -223,7 +223,7 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = do
     -- Calculate thumbnails dimensions, generate and save thumbnail
     (newWidth, newHeight) <- calculateNewSizes <$> GD.imageSize image
     newImage <- GD.resizeImage newWidth newHeight image
-    GD.saveJpegFile jpegQuality thumbnailPath newImage
+    GD.savePngFile thumbnailPath newImage
 
     where
         calculateNewSizes (width, height) = (width, height)
