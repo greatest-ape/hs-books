@@ -1,4 +1,5 @@
 # Important
+  - Implement thumbnail size calculation
   - Make image saving not crash on errors
   - Use some kind of hashing for cover filenames?
   - Send only one title and one creator (possibly in both name forms)
