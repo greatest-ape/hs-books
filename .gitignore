@@ -6,3 +6,6 @@
 
 *.epub
 *.cgi
+
+public_html/media/**/*.png
+public_html/media/**/*.jpg
