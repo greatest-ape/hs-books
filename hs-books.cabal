@@ -19,10 +19,10 @@ executable hs-books
   default-language:    Haskell2010
   build-depends:       aeson
                      , base >= 4.7 && < 5
-                     , base64-bytestring
                      , bytestring
                      , directory
                      , epub-metadata
+                     , gd
                      , mtl
                      , split
                      , zip-archive

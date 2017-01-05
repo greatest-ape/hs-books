@@ -10,8 +10,8 @@ import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Base64.Lazy as Base64
 import qualified Data.ByteString.Lazy.Char8 as Char8
+import qualified Graphics.GD as GD
 
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
@@ -22,15 +22,15 @@ import Data.List.Split (splitOn)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
 import GHC.Generics (Generic)
-import System.Directory (listDirectory)
+import System.Directory (listDirectory, doesFileExist)
 
 
--- * Types
+-- * Types and instances
 
 
 data Cover = Cover {
-    _mediaType  :: String,
-    _image      :: LBS.ByteString
+    _fullsizePath  :: String,
+    _thumbnailPath :: String
 } deriving (Generic, Show)
 
 
@@ -44,13 +44,6 @@ data Book = Book {
 } deriving (Generic, Show)
 
 
-
--- * Instances
-
-
-instance JSON.ToJSON LBS.ByteString where
-    toJSON = JSON.toJSON . Char8.unpack . Base64.encode
-
 instance JSON.ToJSON Cover
 instance JSON.ToJSON Book
 
@@ -59,7 +52,13 @@ instance JSON.ToJSON Book
 -- * Settings
 
 
-bookDirectory = "media/books"
+bookDirectory           = "media/books"
+fullsizeImageDirectory  = "media/covers/full"
+thumbnailDirectory      = "media/covers/small"
+
+imageMaxWidth  = 16 * 15 * 2
+imageMaxHeight = 16 * 15 * 2
+jpegQuality    = 80
 
 
 
@@ -70,8 +69,8 @@ bookDirectory = "media/books"
 -- and send them to the client through CGI
 main :: IO ()
 main = do
-    paths <- map ((bookDirectory ++ "/") ++ ) <$> listDirectory bookDirectory
-    books <- rights <$> mapM readBook paths
+    filenames <- listDirectory bookDirectory
+    books     <- rights <$> mapM readBook filenames
 
     -- Outputting headers and a body to stdout is CGI compatible
     putStrLn "Content-type: text/json; charset=UTF-8\n"
@@ -79,14 +78,17 @@ main = do
 
 
 -- Attempt to create a Book from a file path to an epub file
-readBook :: FilePath -> IO (Either String Book)
-readBook path = runErrorT $ do
+readBook :: String -> IO (Either String Book)
+readBook archiveFilename = runErrorT $ do
+    let path       = bookDirectory ++ "/" ++ archiveFilename
+    let identifier = archiveFilename
+
     xmlString       <- Epub.getPkgXmlFromZip path
     manifest        <- Epub.getManifest xmlString
     package         <- Epub.getPackage xmlString
     metadata        <- Epub.getMetadata xmlString
 
-    maybeCoverImage <- liftIO $ getCoverImage path manifest
+    maybeCoverImage <- liftIO $ getCoverImage path manifest identifier
 
     let titles      = map Epub.titleText $ Epub.metaTitles metadata
         creators    = map extractNameWithComma $ Epub.metaCreators metadata
@@ -102,26 +104,32 @@ readBook path = runErrorT $ do
         _publishers = publishers
     }
 
+
+-- Take a Creator and extract a name in the format "[FIRST NAME] [LAST NAME]"
+extractNameWithoutComma :: Epub.Creator -> String
+extractNameWithoutComma creator =
+    let name = case Epub.creatorFileAs creator of
+            Just fileAs -> fileAs
+            Nothing     -> Epub.creatorText creator
+        parts = splitOn "," name
+    in
+        if length parts > 1
+            then concat (tail parts) ++ " " ++ head parts
+            else name
+
+
+-- Take a Creator and extract a name in the format "[LAST NAME], [FIRST NAME]"
+extractNameWithComma :: Epub.Creator -> String
+extractNameWithComma creator =
+    let name = case Epub.creatorFileAs creator of
+            Just fileAs -> fileAs
+            Nothing     -> Epub.creatorText creator
+    in case length $ splitOn "," name of
+        1 -> buildNameWithComma name
+        2 -> name
+        3 -> Epub.creatorText creator -- Absolute edge case
+
     where
-        extractNameWithoutComma creator =
-            let name = case Epub.creatorFileAs creator of
-                    Just fileAs -> fileAs
-                    Nothing     -> Epub.creatorText creator
-                parts = splitOn "," name
-            in
-                if length parts > 1
-                    then concat (tail parts) ++ " " ++ head parts
-                    else name
-
-        extractNameWithComma creator =
-            let name = case Epub.creatorFileAs creator of
-                    Just fileAs -> fileAs
-                    Nothing     -> Epub.creatorText creator
-            in case length $ splitOn "," name of
-                1 -> buildNameWithComma name
-                2 -> name
-                3 -> Epub.creatorText creator -- Absolute edge case
-
         -- Format a name without a comma "LAST NAME, FIRST NAME(S)"
         buildNameWithComma name =
             let parts = map (filter (/= ',')) $ words name
@@ -131,15 +139,38 @@ readBook path = runErrorT $ do
 -- * Cover images
 
 
--- Given an archive path and a epub manifest, try to find a cover image
-getCoverImage :: FilePath -> Epub.Manifest -> IO (Maybe Cover)
-getCoverImage archivePath manifest = do
+-- Given an archive path, a epub manifest and a string identifier try to find
+-- a cover image
+-- If found, save it in two formats and return a Cover
+getCoverImage :: FilePath -> Epub.Manifest -> String -> IO (Maybe Cover)
+getCoverImage archivePath manifest identifier = do
+    let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".jpg"
+        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
+        justCover      = Just $ Cover fullsizePath thumbnailPath
+
+    fileExists <- doesFileExist thumbnailPath
+
+    if fileExists
+        then return justCover
+        else do
+            imageData <- getImageData archivePath manifest
+
+            case imageData of
+                Just (mediaType, imageByteString) -> do
+                    saveImages fullsizePath thumbnailPath mediaType imageByteString
+                    return justCover
+                Nothing -> return Nothing
+
+-- Given an archive path and a manifest, attempt to find a cover image and
+-- return its data as a mediaType string and a file data bytestring
+getImageData :: FilePath -> Epub.Manifest -> IO (Maybe (String, LBS.ByteString))
+getImageData archivePath manifest = do
     archive <- Zip.toArchive <$> LBS.readFile archivePath
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
-        image        <- findFileInArchive archive $ Epub.mfiHref manifestItem
-        Just $ Cover (Epub.mfiMediaType manifestItem) image
+        imageBS      <- findFileInArchive archive $ Epub.mfiHref manifestItem
+        Just (Epub.mfiMediaType manifestItem, imageBS)
 
 
 -- Given an epub manifest, attempts to find a cover image
@@ -175,6 +206,27 @@ extractFolders paths = paths >>= f
                 if l > 1
                     then scanl' (\a b -> a ++ "/" ++ b) "" folderParts
                     else []
+
+
+-- Save a fullsize version and a thumbnail of an image
+-- Will panic on errors, which should maybe be handled differently
+saveImages :: FilePath -> FilePath -> String -> LBS.ByteString -> IO ()
+saveImages fullsizePath thumbnailPath mediaType imageByteString = do
+    image <- case mediaType of
+        "image/png"  -> GD.loadPngByteString $ LBS.toStrict imageByteString
+        "image/jpeg" -> GD.loadJpegByteString $ LBS.toStrict imageByteString
+        "image/gif"  -> GD.loadGifByteString $ LBS.toStrict imageByteString
+
+    -- Save fullsize as jpeg
+    GD.saveJpegFile jpegQuality fullsizePath image
+
+    -- Calculate thumbnails dimensions, generate and save thumbnail
+    (newWidth, newHeight) <- calculateNewSizes <$> GD.imageSize image
+    newImage <- GD.resizeImage newWidth newHeight image
+    GD.saveJpegFile jpegQuality thumbnailPath newImage
+
+    where
+        calculateNewSizes (width, height) = (width, height)
 
 
 -- * Utils

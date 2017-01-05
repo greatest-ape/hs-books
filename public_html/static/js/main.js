@@ -81,10 +81,8 @@ var App = function($, books){
                 var cover = book._maybeCover;
 
                 if (cover){
-                    var s = 'data:' + cover._mediaType + ';base64,' + cover._image;
-
                     $book.find('.image a').attr('href', book._path);
-                    $book.find('img').attr('src', s);
+                    $book.find('img').attr('src', cover._thumbnailPath);
                 }
 
                 $book.find('.title').html(book._titles[0]);

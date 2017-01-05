@@ -1,6 +1,6 @@
 # Important
-  - Generate small jpegs for all covers; if already saved, don't generate;
-    name after filename or possibly some kind of hash
+  - Make image saving not crash on errors
+  - Use some kind of hashing for cover filenames?
   - Send only one title and one creator (possibly in both name forms)
   - Send one date and one publisher as maybe?
   
