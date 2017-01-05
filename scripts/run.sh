@@ -1,5 +1,5 @@
 #!/bin/bash
 
 cd public_html
-./index.cgi
+./app.cgi
 cd ..
