@@ -12,6 +12,7 @@ import qualified Codec.Picture as JuicyPixels
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as Char8
+import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
 
@@ -77,9 +78,9 @@ main = do
     filenames <- listDirectory bookDirectory
     books     <- rights <$> mapM readBook filenames
 
-    -- Outputting headers and a body to stdout is CGI compatible
-    putStrLn "Content-type: application/json\n"
-    LBS.putStr $ JSON.encode books
+    CGI.runCGI $ do
+        CGI.setHeader "Content-type" "application/json\n"
+        CGI.outputFPS $ JSON.encode books
 
 
 -- Attempt to create a Book from a file path to an epub file
@@ -163,10 +164,7 @@ getCoverImage archivePath manifest identifier = do
             case imageData of
                 Just (mediaType, imageByteString) -> do
                     success <- saveImages fullsizePath thumbnailPath mediaType imageByteString
-
-                    case success of
-                        Right _ -> return justCover
-                        Left _  -> return Nothing
+                    return $ if success then justCover else Nothing
                 Nothing -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
@@ -222,10 +220,10 @@ saveImages
     -> FilePath
     -> String
     -> LBS.ByteString
-    -> IO (Either IOException ())
-saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
+    -> IO Bool
+saveImages fullsizePath thumbnailPath mediaType imageByteString = do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
-        Left _ -> return ()
+        Left _ -> return False
         Right juicyImage -> do
             let fridayImage = toFridayRGBA $ JuicyPixels.convertRGBA8 juicyImage
                 Friday.Z Friday.:. height Friday.:. width = Friday.manifestSize fridayImage
@@ -236,6 +234,8 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
                 toJuicyRGBA $ Friday.resize Friday.TruncateInteger newSize fridayImage
 
             JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
+
+            return True
 
     where
         calculateNewSizes :: (Int, Int) -> (Int, Int)

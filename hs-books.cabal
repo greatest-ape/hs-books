@@ -20,6 +20,7 @@ executable hs-books
   build-depends:       aeson
                      , base >= 4.7 && < 5
                      , bytestring
+                     , cgi
                      , directory
                      , epub-metadata
                      , friday
