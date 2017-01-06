@@ -13,6 +13,7 @@ import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as Char8
 import qualified Graphics.GD as GD
 
+import Control.Exception (IOException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
@@ -157,8 +158,11 @@ getCoverImage archivePath manifest identifier = do
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
-                    saveImages fullsizePath thumbnailPath mediaType imageByteString
-                    return justCover
+                    success <- saveImages fullsizePath thumbnailPath mediaType imageByteString
+
+                    case success of
+                        Right _ -> return justCover
+                        Left _  -> return Nothing
                 Nothing -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
@@ -209,16 +213,20 @@ extractFolders paths = paths >>= f
 
 
 -- Save a fullsize version and a thumbnail of an image
--- Will panic on errors, which should maybe be handled differently
-saveImages :: FilePath -> FilePath -> String -> LBS.ByteString -> IO ()
-saveImages fullsizePath thumbnailPath mediaType imageByteString = do
+saveImages
+    :: FilePath
+    -> FilePath
+    -> String
+    -> LBS.ByteString
+    -> IO (Either IOException ())
+saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
     image <- case mediaType of
         "image/png"  -> GD.loadPngByteString $ LBS.toStrict imageByteString
         "image/jpeg" -> GD.loadJpegByteString $ LBS.toStrict imageByteString
         "image/gif"  -> GD.loadGifByteString $ LBS.toStrict imageByteString
 
     -- Save fullsize as jpeg
-    GD.saveJpegFile jpegQuality fullsizePath image
+    GD.saveJpegFile 100 fullsizePath image
 
     -- Calculate thumbnails dimensions, generate and save thumbnail
     (newWidth, newHeight) <- calculateNewSizes <$> GD.imageSize image

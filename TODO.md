@@ -1,5 +1,5 @@
 # Important
-  - Make image saving not crash on errors
+  - Improve image saving error management (catch more specific errors)
 
 # Not important
   - Add a last-resort path search for all image files named something like
