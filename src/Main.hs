@@ -227,7 +227,7 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
         "image/gif"  -> GD.loadGifByteString $ LBS.toStrict imageByteString
 
     -- Save fullsize as jpeg
-    GD.saveJpegFile 100 fullsizePath image
+    GD.saveJpegFile jpegQuality fullsizePath image
 
     -- Calculate thumbnails dimensions, generate and save thumbnail
     (newWidth, newHeight) <- calculateNewSizes <$> GD.imageSize image
