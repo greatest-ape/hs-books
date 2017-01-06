@@ -74,13 +74,12 @@ jpegQuality    = 80
 -- Read epub files, parse them into the Book datatype, convert them to JSON
 -- and send them to the client through CGI
 main :: IO ()
-main = do
-    filenames <- listDirectory bookDirectory
-    books     <- rights <$> mapM readBook filenames
+main = CGI.runCGI $ CGI.handleErrors $ do
+    filenames <- CGI.liftIO $ listDirectory bookDirectory
+    books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
 
-    CGI.runCGI $ do
-        CGI.setHeader "Content-type" "application/json\n"
-        CGI.outputFPS $ JSON.encode books
+    CGI.setHeader "Content-type" "application/json\n"
+    CGI.outputFPS $ JSON.encode books
 
 
 -- Attempt to create a Book from a file path to an epub file
