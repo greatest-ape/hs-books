@@ -8,10 +8,12 @@ import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
+import qualified Codec.Picture as JuicyPixels
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.ByteString.Lazy.Char8 as Char8
-import qualified Graphics.GD as GD
+import qualified Vision.Image as Friday
+import qualified Vision.Primitive.Shape as Friday
 
 import Control.Exception (IOException, try)
 import Control.Monad.Error (runErrorT, liftIO)
@@ -25,6 +27,7 @@ import Data.String (fromString)
 import Data.Tuple (swap)
 import GHC.Generics (Generic)
 import System.Directory (listDirectory, doesFileExist)
+import Vision.Image.JuicyPixels (toFridayRGBA, toJuicyRGBA)
 
 
 -- * Types and instances
@@ -221,18 +224,18 @@ saveImages
     -> LBS.ByteString
     -> IO (Either IOException ())
 saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
-    image <- case mediaType of
-        "image/png"  -> GD.loadPngByteString $ LBS.toStrict imageByteString
-        "image/jpeg" -> GD.loadJpegByteString $ LBS.toStrict imageByteString
-        "image/gif"  -> GD.loadGifByteString $ LBS.toStrict imageByteString
+    case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
+        Left _ -> return ()
+        Right juicyImage -> do
+            let fridayImage = toFridayRGBA $ JuicyPixels.convertRGBA8 juicyImage
+                Friday.Z Friday.:. height Friday.:. width = Friday.manifestSize fridayImage
+                (newWidth, newHeight) = calculateNewSizes (width, height)
+                newSize = Friday.ix2 newHeight newWidth
 
-    -- Save fullsize as jpeg
-    GD.saveJpegFile jpegQuality fullsizePath image
+            JuicyPixels.writePng thumbnailPath $
+                toJuicyRGBA $ Friday.resize Friday.Bilinear newSize fridayImage
 
-    -- Calculate thumbnails dimensions, generate and save thumbnail
-    (newWidth, newHeight) <- calculateNewSizes <$> GD.imageSize image
-    newImage <- GD.resizeImage newWidth newHeight image
-    GD.savePngFile thumbnailPath newImage
+            JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
 
     where
         calculateNewSizes :: (Int, Int) -> (Int, Int)

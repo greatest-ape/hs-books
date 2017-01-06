@@ -22,7 +22,9 @@ executable hs-books
                      , bytestring
                      , directory
                      , epub-metadata
-                     , gd
+                     , friday
+                     , friday-juicypixels
+                     , JuicyPixels
                      , mtl
                      , split
                      , zip-archive
