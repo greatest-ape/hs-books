@@ -64,7 +64,6 @@ thumbnailDirectory      = "media/covers/small"
 
 imageMaxWidth  = 16 * 15 * 2
 imageMaxHeight = 16 * 15 * 2
-jpegQuality    = 80
 
 
 
@@ -184,9 +183,9 @@ getCoverManifestItem (Epub.Manifest items) =
     maybeHead $ filter (\i -> isImage i && (hasCoverInHref i || hasCoverInID i)) items
 
     where
-        isImage manifestItem = "image" `isInfixOf` Epub.mfiMediaType manifestItem
+        isImage manifestItem        = "image" `isInfixOf` Epub.mfiMediaType manifestItem
         hasCoverInHref manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
-        hasCoverInID manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
+        hasCoverInID manifestItem   = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
 
 
 -- Extract a file in a zip archive by the file path. Looks in all root level
