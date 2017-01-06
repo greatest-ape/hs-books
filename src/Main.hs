@@ -132,7 +132,7 @@ extractNameWithComma creator =
     in case length $ splitOn "," name of
         1 -> buildNameWithComma name
         2 -> name
-        3 -> Epub.creatorText creator -- Absolute edge case
+        _ -> Epub.creatorText creator -- Absolute edge case
 
     where
         -- Format a name without a comma "LAST NAME, FIRST NAME(S)"
