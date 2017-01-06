@@ -36,7 +36,7 @@ a:hover, a:active, a:focus {
     overflow: hidden;
 
     float: left;
-    width: calc(80% - 4rem - 2px);
+    width: calc(100% - 25rem - 4rem - 2px);
     margin: auto;
 
     margin-left: 2rem;
@@ -72,9 +72,10 @@ a:hover, a:active, a:focus {
 
 #creators {
     float: left;
-    width: 20%;
+    width: 25rem;
     padding-top: 2rem;
     padding-left: 1rem;
+    padding-bottom: 1rem;
     border-left: 2px solid #ccc;
 }
     #creators .creator {
@@ -100,4 +101,22 @@ a:hover, a:active, a:focus {
             
 #prototypes {
     display: none;
+}
+
+@media (max-width: 1050px){
+    #books {
+        width: calc(100% - 20rem - 4rem - 2px);
+    }
+    #creators {
+        width: 20rem;
+    }
+}
+
+@media (max-width: 650px){
+    #books {
+        display: none;
+    }
+    #creators {
+        width: 100%;
+    }
 }
