@@ -14,14 +14,15 @@ import qualified Data.ByteString.Lazy.Char8 as Char8
 import qualified Graphics.GD as GD
 
 import Control.Exception (IOException, try)
-import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
+import Control.Monad (forM_)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf, nub, scanl', words, unwords)
 import Data.List.Split (splitOn)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
+import Data.Tuple (swap)
 import GHC.Generics (Generic)
 import System.Directory (listDirectory, doesFileExist)
 
@@ -238,15 +239,14 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
         calculateNewSizes (width, height) =
             case compare width height of
                 EQ -> (imageMaxWidth, imageMaxHeight)
-                LT ->
-                    let newHeight = fromIntegral imageMaxHeight
-                        newWidth = fromIntegral width * (newHeight / fromIntegral height)
-                    in (round newWidth, round newHeight)
-                GT ->
-                    let newWidth = fromIntegral imageMaxWidth
-                        newHeight = fromIntegral height * (newWidth / fromIntegral width)
-                    in (round newWidth, round newHeight)
+                LT -> swap $ scale height width imageMaxHeight
+                GT -> scale width height imageMaxWidth
 
+        scale :: Int -> Int -> Int -> (Int, Int)
+        scale a b maxA =
+            let newA = fromIntegral maxA
+                newB = fromIntegral b * (newA / fromIntegral a)
+            in (round newA, round newB)
 
 -- * Utils
 
