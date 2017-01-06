@@ -233,7 +233,7 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = try $ do
                 newSize = Friday.ix2 newHeight newWidth
 
             JuicyPixels.writePng thumbnailPath $
-                toJuicyRGBA $ Friday.resize Friday.Bilinear newSize fridayImage
+                toJuicyRGBA $ Friday.resize Friday.TruncateInteger newSize fridayImage
 
             JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
 
