@@ -7,6 +7,8 @@ var App = function($, books){
     self.init = function(books){
         self.creators = self.buildCreators(books);
         
+        self.hideLoading();
+        
         self.renderCreators();
         self.renderBooks();
         
@@ -48,6 +50,10 @@ var App = function($, books){
         });
         
         return creators;
+    };
+    
+    self.hideLoading = function(){
+        $('#loading').hide();
     };
     
     self.renderCreators = function(){
