@@ -78,7 +78,7 @@ main = do
     books     <- rights <$> mapM readBook filenames
 
     -- Outputting headers and a body to stdout is CGI compatible
-    putStrLn "Content-type: text/json; charset=UTF-8\n"
+    putStrLn "Content-type: application/json\n"
     LBS.putStr $ JSON.encode books
 
 
