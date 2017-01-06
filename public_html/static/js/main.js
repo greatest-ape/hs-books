@@ -109,7 +109,9 @@ var App = function($, books){
     };
     
     self.makeCreatorsGoToBottom = function(){
-        $('#creators').height($(document).height());
+        if ($(window).width() > 650){
+            $('#creators').height($(document).height());
+        }
     };
     
     self.init(books);
