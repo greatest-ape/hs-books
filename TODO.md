@@ -1,5 +1,4 @@
 # Important
-  - Implement thumbnail size calculation
   - Make image saving not crash on errors
 
 # Not important

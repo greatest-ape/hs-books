@@ -226,7 +226,18 @@ saveImages fullsizePath thumbnailPath mediaType imageByteString = do
     GD.savePngFile thumbnailPath newImage
 
     where
-        calculateNewSizes (width, height) = (width, height)
+        calculateNewSizes :: (Int, Int) -> (Int, Int)
+        calculateNewSizes (width, height) =
+            case compare width height of
+                EQ -> (imageMaxWidth, imageMaxHeight)
+                LT ->
+                    let newHeight = fromIntegral imageMaxHeight
+                        newWidth = fromIntegral width * (newHeight / fromIntegral height)
+                    in (round newWidth, round newHeight)
+                GT ->
+                    let newWidth = fromIntegral imageMaxWidth
+                        newHeight = fromIntegral height * (newWidth / fromIntegral width)
+                    in (round newWidth, round newHeight)
 
 
 -- * Utils
