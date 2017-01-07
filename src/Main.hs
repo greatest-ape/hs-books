@@ -191,7 +191,7 @@ getCoverManifestItem (Epub.Manifest items) =
 -- folders in the archive
 findFileInArchive :: Zip.Archive -> FilePath -> Maybe LBS.ByteString
 findFileInArchive archive path =
-    let folders = extractFolders $ Zip.filesInArchive archive
+    let folders = "" : (extractFolders $ Zip.filesInArchive archive) -- Add the root dir as well (empty string)
         paths   = path : map (\folder -> folder ++ "/" ++ path) folders
         entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
     in Zip.fromEntry <$> maybeHead entries
