@@ -34,6 +34,10 @@ import Vision.Image.JuicyPixels (toFridayRGBA, toJuicyRGBA)
 -- * Types and instances
 
 
+-- Identifies a cover image
+type Identifier = String
+
+
 data Cover = Cover {
     _fullsizePath  :: String,
     _thumbnailPath :: String
@@ -146,7 +150,7 @@ extractNameWithComma creator =
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
 -- If found, save it in two formats and return a Cover
-getCoverImage :: FilePath -> Epub.Manifest -> String -> IO (Maybe Cover)
+getCoverImage :: FilePath -> Epub.Manifest -> Identifier -> IO (Maybe Cover)
 getCoverImage archivePath manifest identifier = do
     let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".jpg"
         thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
