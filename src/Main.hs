@@ -1,5 +1,5 @@
-{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Main where
 
@@ -17,8 +17,8 @@ import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
 
 import Control.Exception (IOException, try)
-import Control.Monad.Error (runErrorT, liftIO)
 import Control.Monad (forM_)
+import Control.Monad.Error (runErrorT, liftIO)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf, nub, scanl', words, unwords)
@@ -160,24 +160,23 @@ getCoverImage archivePath manifest identifier = do
             imageData <- getImageData archivePath manifest
 
             case imageData of
-                Just (mediaType, imageByteString) -> do
-                    success <- saveImages fullsizePath thumbnailPath mediaType imageByteString
+                Just imageByteString -> do
+                    success <- saveImages fullsizePath thumbnailPath imageByteString
                     return $ if success then justCover else Nothing
                 Nothing -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
--- return its data as a mediaType string and a file data bytestring
-getImageData :: FilePath -> Epub.Manifest -> IO (Maybe (String, LBS.ByteString))
+-- return its data as a ByteString
+getImageData :: FilePath -> Epub.Manifest -> IO (Maybe LBS.ByteString)
 getImageData archivePath manifest = do
     archive <- Zip.toArchive <$> LBS.readFile archivePath
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
-        imageBS      <- findFileInArchive archive $ Epub.mfiHref manifestItem
-        Just (Epub.mfiMediaType manifestItem, imageBS)
+        findFileInArchive archive $ Epub.mfiHref manifestItem
 
 
--- Given an epub manifest, attempts to find a cover image
+-- Given an epub manifest, attempts to find a ManifestItem for a cover image
 getCoverManifestItem :: Epub.Manifest -> Maybe Epub.ManifestItem
 getCoverManifestItem (Epub.Manifest items) =
     maybeHead $ filter (\i -> isImage i && (hasCoverInHref i || hasCoverInID i)) items
@@ -188,19 +187,19 @@ getCoverManifestItem (Epub.Manifest items) =
         hasCoverInID manifestItem   = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
 
 
--- Extract a file in a zip archive by the file path. Looks in all root level
--- folders
+-- Extract a file in a zip archive by the file path. Looks for the file in all
+-- folders in the archive
 findFileInArchive :: Zip.Archive -> FilePath -> Maybe LBS.ByteString
 findFileInArchive archive path =
-    let folders = nub $ extractFolders $ Zip.filesInArchive archive
+    let folders = extractFolders $ Zip.filesInArchive archive
         paths   = path : map (\folder -> folder ++ "/" ++ path) folders
         entries = catMaybes $ map (flip Zip.findEntryByPath archive) paths
     in Zip.fromEntry <$> maybeHead entries
 
 
--- Take a list of paths, return those who seem to be folders
+-- Take a list of paths, extract all folders
 extractFolders :: [FilePath] -> [FilePath]
-extractFolders paths = paths >>= f
+extractFolders paths = nub $ paths >>= f
     where
         f path =
             let parts       = splitOn "/" path
@@ -216,10 +215,9 @@ extractFolders paths = paths >>= f
 saveImages
     :: FilePath
     -> FilePath
-    -> String
     -> LBS.ByteString
     -> IO Bool
-saveImages fullsizePath thumbnailPath mediaType imageByteString = do
+saveImages fullsizePath thumbnailPath imageByteString = do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
         Left _ -> return False
         Right juicyImage -> do
