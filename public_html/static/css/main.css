@@ -118,5 +118,6 @@ a:hover, a:active, a:focus {
     }
     #creators {
         width: 100%;
+        padding-right: 1rem;
     }
 }
