@@ -144,7 +144,9 @@ extractNameWithComma creator =
         -- Format a name without a comma "LAST NAME, FIRST NAME(S)"
         buildNameWithComma name =
             let parts = map (filter (/= ',')) $ words name
-            in last parts ++ ", " ++ unwords (init parts)
+            in if length parts == 1
+                then last parts
+                else last parts ++ ", " ++ unwords (init parts)
 
 
 -- * Cover images
