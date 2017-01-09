@@ -20,7 +20,7 @@ import qualified Vision.Primitive.Shape as Friday
 import Control.Exception (IOException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
-import Crypto.Hash (HashAlgorithm, SHA256, Digest, hashlazy, digestToHexByteString)
+import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf, nub, scanl', words, unwords)
