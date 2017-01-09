@@ -21,6 +21,7 @@ executable hs-books
                      , base >= 4.7 && < 5
                      , bytestring
                      , cgi
+                     , cryptohash
                      , directory
                      , epub-metadata
                      , friday
