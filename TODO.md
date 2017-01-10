@@ -1,4 +1,5 @@
 # Important
+  - Add a query argument for ignoring the cache
   - Be more granular in catching exceptions from getCoverImage
 
 # Not important
