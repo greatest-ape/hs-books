@@ -18,7 +18,7 @@ import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
 
-import Control.Exception (Exception, SomeException, IOException, try)
+import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
 import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
