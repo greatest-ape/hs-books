@@ -69,6 +69,8 @@ bookDirectory           = "media/books"
 fullsizeImageDirectory  = "media/covers/full"
 thumbnailDirectory      = "media/covers/small"
 
+jpegQuality             = 70
+
 filenameCachePath       = ".filename-cache"
 jsonCachePath           = ".json-cache"
 
@@ -321,7 +323,7 @@ saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
     (width, height) <- GD.imageSize image
     let (newWidth, newHeight) = calculateThumbnailSize width height
     thumbnail <- GD.resizeImage newWidth newHeight image
-    GD.saveJpegFile 70 thumbnailPath thumbnail
+    GD.saveJpegFile jpegQuality thumbnailPath thumbnail
 
     return True
 
