@@ -169,7 +169,7 @@ getCoverImage
     -> IO (Either SomeException (Maybe Cover))
 getCoverImage archivePath manifest identifier = try $ do
     let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".png"
-        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
+        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
         justCover      = Just $ Cover fullsizePath thumbnailPath
 
     fileExists <- doesFileExist thumbnailPath
@@ -285,7 +285,7 @@ saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
     (width, height) <- GD.imageSize image
     let (newWidth, newHeight) = calculateThumbnailSize width height
     thumbnail <- GD.resizeImage newWidth newHeight image
-    GD.savePngFile thumbnailPath thumbnail
+    GD.saveJpegFile 70 thumbnailPath thumbnail
 
     return True
 
