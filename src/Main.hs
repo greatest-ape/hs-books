@@ -10,8 +10,9 @@ import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
 import qualified Codec.Picture as JuicyPixels
 import qualified Data.Aeson as JSON
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
-import qualified Data.ByteString.Lazy.Char8 as Char8
 import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
@@ -19,6 +20,7 @@ import qualified Vision.Primitive.Shape as Friday
 import Control.Exception (IOException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (runErrorT, liftIO)
+import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isInfixOf, nub, scanl', words, unwords)
@@ -89,7 +91,8 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 readBook :: String -> IO (Either String Book)
 readBook archiveFilename = runErrorT $ do
     let path       = bookDirectory ++ "/" ++ archiveFilename
-    let identifier = archiveFilename
+        hash       = hashlazy $ fromString archiveFilename :: Digest SHA256
+        identifier = Char8.unpack $ digestToHexByteString hash
 
     xmlString       <- Epub.getPkgXmlFromZip path
     manifest        <- Epub.getManifest xmlString
@@ -141,7 +144,9 @@ extractNameWithComma creator =
         -- Format a name without a comma "LAST NAME, FIRST NAME(S)"
         buildNameWithComma name =
             let parts = map (filter (/= ',')) $ words name
-            in last parts ++ ", " ++ unwords (init parts)
+            in if length parts == 1
+                then last parts
+                else last parts ++ ", " ++ unwords (init parts)
 
 
 -- * Cover images
@@ -152,7 +157,7 @@ extractNameWithComma creator =
 -- If found, save it in two formats and return a Cover
 getCoverImage :: FilePath -> Epub.Manifest -> Identifier -> IO (Maybe Cover)
 getCoverImage archivePath manifest identifier = do
-    let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".jpg"
+    let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".png"
         thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
         justCover      = Just $ Cover fullsizePath thumbnailPath
 
