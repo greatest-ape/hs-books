@@ -233,7 +233,7 @@ extractFolders paths = "" : (nub $ paths >>= f) -- The empty string adds the roo
                     else []
 
 
--- Save a fullsize version and a thumbnail of an image
+-- Save a fullsize version and a thumbnail of an image with Friday and JuicyPixels
 saveImagesFridayJuicy
     :: FilePath
     -> FilePath
@@ -256,7 +256,7 @@ saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString = do
             return True
 
 
--- Save a fullsize version and a thumbnail of an image
+-- Save a fullsize version and a thumbnail of an image with GD
 saveImagesGD
     :: FilePath
     -> FilePath
