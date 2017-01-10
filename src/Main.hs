@@ -69,7 +69,7 @@ bookDirectory           = "media/books"
 fullsizeImageDirectory  = "media/covers/full"
 thumbnailDirectory      = "media/covers/small"
 
-filenameCachePath       = ".filename-cache" -- TODO implement
+filenameCachePath       = ".filename-cache"
 jsonCachePath           = ".json-cache"
 
 imageMaxWidth  = 16 * 15
@@ -125,6 +125,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
         -- Use rest of program to create books and generate JSON from filenames
         generateJson filenames =
             JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
+
 
 -- Attempt to create a Book from a file path to an epub file
 readBook :: String -> IO (Either String Book)
