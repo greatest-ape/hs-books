@@ -279,7 +279,7 @@ saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
         "image/gif" -> GD.loadGifByteString imageByteStringStrict
 
     -- Save full-size copy
-    GD.savePngFile fullsizePath image
+    -- GD.savePngFile fullsizePath image -- DISABLED
 
     -- Calculate thumbnail dimensions, create and save thumbnail
     (width, height) <- GD.imageSize image
