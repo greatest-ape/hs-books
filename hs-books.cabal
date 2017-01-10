@@ -26,6 +26,7 @@ executable hs-books
                      , epub-metadata
                      , friday
                      , friday-juicypixels
+                     , gd
                      , JuicyPixels
                      , mtl
                      , split

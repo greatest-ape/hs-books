@@ -13,6 +13,7 @@ import qualified Data.Aeson as JSON
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
+import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
@@ -172,8 +173,8 @@ getCoverImage archivePath manifest identifier = runErrorT $ do
             imageData <- getImageData archivePath manifest
 
             case imageData of
-                Just imageByteString -> do
-                    success <- saveImages fullsizePath thumbnailPath imageByteString
+                Just (mediaType, imageByteString) -> do
+                    success <- saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString
 
                     case success of
                         True  -> return justCover
@@ -186,13 +187,14 @@ getCoverImage archivePath manifest identifier = runErrorT $ do
 getImageData
     :: FilePath
     -> Epub.Manifest
-    -> ErrorT String IO (Maybe LBS.ByteString)
+    -> ErrorT String IO (Maybe (String, LBS.ByteString))
 getImageData archivePath manifest = do
     archive <- Zip.toArchive <$> (liftIO $ LBS.readFile archivePath)
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
-        findFileInArchive archive $ Epub.mfiHref manifestItem
+        maybeByteString <- findFileInArchive archive $ Epub.mfiHref manifestItem
+        return (Epub.mfiMediaType manifestItem, maybeByteString)
 
 
 -- Given an epub manifest, attempts to find a ManifestItem for a cover image
@@ -231,12 +233,12 @@ extractFolders paths = "" : (nub $ paths >>= f) -- The empty string adds the roo
 
 
 -- Save a fullsize version and a thumbnail of an image
-saveImages
+saveImagesFridayJuicy
     :: FilePath
     -> FilePath
     -> LBS.ByteString
     -> ErrorT String IO Bool
-saveImages fullsizePath thumbnailPath imageByteString = do
+saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString = do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
         Left _ -> return False
         Right juicyImage -> do
@@ -251,6 +253,33 @@ saveImages fullsizePath thumbnailPath imageByteString = do
             liftIO $ JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
 
             return True
+
+
+-- Save a fullsize version and a thumbnail of an image
+saveImagesGD
+    :: FilePath
+    -> FilePath
+    -> String
+    -> LBS.ByteString
+    -> ErrorT String IO Bool
+saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = liftIO $ do
+    let imageByteStringStrict = LBS.toStrict imageByteString
+
+    image <- case mediaType of
+        "image/png" -> GD.loadJpegByteString imageByteStringStrict
+        "image/jpeg" -> GD.loadPngByteString imageByteStringStrict
+        "image/gif" -> GD.loadGifByteString imageByteStringStrict
+
+    -- Save full-size copy
+    GD.savePngFile fullsizePath image
+
+    -- Calculate thumbnail dimensions, create and save thumbnail
+    (width, height) <- GD.imageSize image
+    let (newWidth, newHeight) = calculateThumbnailSize width height
+    thumbnail <- GD.resizeImage newWidth newHeight image
+    GD.savePngFile thumbnailPath thumbnail
+
+    return True
 
 
 calculateThumbnailSize :: Int -> Int -> (Int, Int)
