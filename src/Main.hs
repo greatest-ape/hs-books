@@ -174,7 +174,8 @@ getCoverImage archivePath manifest identifier = runErrorT $ do
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
-                    success <- saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString
+                    -- success <- saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString
+                    success <- saveImagesGD fullsizePath thumbnailPath mediaType imageByteString
 
                     case success of
                         True  -> return justCover
