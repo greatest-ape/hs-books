@@ -81,7 +81,7 @@ imageMaxHeight = 16 * 15 * 2
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- CGI.liftIO $ listDirectory bookDirectory
-    books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
+    books     <- fmap rights $ CGI.liftIO $ mapM readBook filenames
 
     CGI.setHeader "Content-type" "application/json\n"
     CGI.outputFPS $ JSON.encode books
