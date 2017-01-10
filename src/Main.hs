@@ -18,7 +18,7 @@ import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
 
-import Control.Exception (IOException, try)
+import Control.Exception (Exception, SomeException, IOException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
 import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
@@ -103,7 +103,7 @@ readBook archiveFilename = runErrorT $ do
     eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest identifier
     let maybeCoverImage = case eitherMaybeCoverImage of
             Right maybeCoverImage -> maybeCoverImage
-            _                     -> Nothing
+            Left _                -> Nothing
 
     let titles      = map Epub.titleText $ Epub.metaTitles metadata
         creators    = map extractNameWithComma $ Epub.metaCreators metadata
@@ -159,13 +159,17 @@ extractNameWithComma creator =
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
 -- If found, save it in two formats and return a Cover
-getCoverImage :: FilePath -> Epub.Manifest -> Identifier -> IO (Either String (Maybe Cover))
-getCoverImage archivePath manifest identifier = runErrorT $ do
+getCoverImage
+    :: FilePath
+    -> Epub.Manifest
+    -> Identifier
+    -> IO (Either SomeException (Maybe Cover))
+getCoverImage archivePath manifest identifier = try $ do
     let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".png"
         thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
         justCover      = Just $ Cover fullsizePath thumbnailPath
 
-    fileExists <- liftIO $ doesFileExist thumbnailPath
+    fileExists <- doesFileExist thumbnailPath
 
     if fileExists
         then return justCover
@@ -188,9 +192,9 @@ getCoverImage archivePath manifest identifier = runErrorT $ do
 getImageData
     :: FilePath
     -> Epub.Manifest
-    -> ErrorT String IO (Maybe (String, LBS.ByteString))
+    -> IO (Maybe (String, LBS.ByteString))
 getImageData archivePath manifest = do
-    archive <- Zip.toArchive <$> (liftIO $ LBS.readFile archivePath)
+    archive <- Zip.toArchive <$> LBS.readFile archivePath
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
@@ -238,7 +242,7 @@ saveImagesFridayJuicy
     :: FilePath
     -> FilePath
     -> LBS.ByteString
-    -> ErrorT String IO Bool
+    -> IO Bool
 saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString = do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
         Left _ -> return False
@@ -262,7 +266,7 @@ saveImagesGD
     -> FilePath
     -> String
     -> LBS.ByteString
-    -> ErrorT String IO Bool
+    -> IO Bool
 saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = liftIO $ do
     let imageByteStringStrict = LBS.toStrict imageByteString
 
