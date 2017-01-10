@@ -267,7 +267,7 @@ saveImagesGD
     -> String
     -> LBS.ByteString
     -> IO Bool
-saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = liftIO $ do
+saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
     let imageByteStringStrict = LBS.toStrict imageByteString
 
     image <- case mediaType of
