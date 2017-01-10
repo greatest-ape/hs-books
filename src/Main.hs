@@ -21,7 +21,7 @@ import qualified Vision.Primitive.Shape as Friday
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
-import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
+import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy, hash)
 import Data.Char (toLower)
 import Data.Either (rights)
 import Data.List (isSuffixOf, isInfixOf, nub, scanl', words, unwords)
@@ -85,16 +85,22 @@ imageMaxHeight = 16 * 15
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
-    let filenameHash = Char8.pack $ show filenames
+
+    -- Cache logic
+
+    let filenameHash = digestToHexByteString $ (hash $ Char8.pack $ show filenames :: Digest SHA256)
 
     jsonCache <- liftIO $ readJsonCache filenameHash
 
+    -- Either use cache JSON or generate it anew
     json <- case jsonCache of
         Left _          -> JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
         Right jsonCache -> return $ LBS.fromStrict jsonCache
 
     liftIO $ BS.writeFile filenameCachePath filenameHash
     liftIO $ LBS.writeFile jsonCachePath json
+
+    -- CGI output
 
     CGI.setHeader "Content-type" "application/json"
     CGI.outputFPS json
