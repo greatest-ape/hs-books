@@ -1,3 +1,3 @@
 #!/bin/sh
 
-stack build && ./scripts/copy-cgi.sh && ./scripts/run.sh
+stack build --ghc-options='-O' && ./scripts/copy-cgi.sh && ./scripts/run.sh

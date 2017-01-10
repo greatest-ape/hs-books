@@ -31,4 +31,3 @@ executable hs-books
                      , mtl
                      , split
                      , zip-archive
-
