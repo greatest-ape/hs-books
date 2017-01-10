@@ -19,7 +19,7 @@ import qualified Vision.Primitive.Shape as Friday
 
 import Control.Exception (IOException, try)
 import Control.Monad (forM_)
-import Control.Monad.Error (runErrorT, liftIO)
+import Control.Monad.Error (ErrorT, runErrorT, liftIO)
 import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
 import Data.Char (toLower)
 import Data.Either (rights)
@@ -81,7 +81,7 @@ imageMaxHeight = 16 * 15 * 2
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- CGI.liftIO $ listDirectory bookDirectory
-    books     <- fmap rights $ CGI.liftIO $ mapM readBook filenames
+    books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
 
     CGI.setHeader "Content-type" "application/json\n"
     CGI.outputFPS $ JSON.encode books
@@ -99,7 +99,10 @@ readBook archiveFilename = runErrorT $ do
     package         <- Epub.getPackage xmlString
     metadata        <- Epub.getMetadata xmlString
 
-    maybeCoverImage <- liftIO $ getCoverImage path manifest identifier
+    eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest identifier
+    let maybeCoverImage = case eitherMaybeCoverImage of
+            Right maybeCoverImage -> maybeCoverImage
+            _                     -> Nothing
 
     let titles      = map Epub.titleText $ Epub.metaTitles metadata
         creators    = map extractNameWithComma $ Epub.metaCreators metadata
@@ -155,13 +158,13 @@ extractNameWithComma creator =
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
 -- If found, save it in two formats and return a Cover
-getCoverImage :: FilePath -> Epub.Manifest -> Identifier -> IO (Maybe Cover)
-getCoverImage archivePath manifest identifier = do
+getCoverImage :: FilePath -> Epub.Manifest -> Identifier -> IO (Either String (Maybe Cover))
+getCoverImage archivePath manifest identifier = runErrorT $ do
     let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".png"
         thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".png"
         justCover      = Just $ Cover fullsizePath thumbnailPath
 
-    fileExists <- doesFileExist thumbnailPath
+    fileExists <- liftIO $ doesFileExist thumbnailPath
 
     if fileExists
         then return justCover
@@ -169,20 +172,23 @@ getCoverImage archivePath manifest identifier = do
             imageData <- getImageData archivePath manifest
 
             case imageData of
-                Right (Just imageByteString) -> do
-                    eitherSuccess <- saveImages fullsizePath thumbnailPath imageByteString
+                Just imageByteString -> do
+                    success <- saveImages fullsizePath thumbnailPath imageByteString
 
-                    case eitherSuccess of
-                        Right True -> return justCover
-                        _          -> return Nothing
+                    case success of
+                        True  -> return justCover
+                        False -> return Nothing
 
                 _ -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
 -- return its data as a ByteString
-getImageData :: FilePath -> Epub.Manifest -> IO (Either String (Maybe LBS.ByteString))
-getImageData archivePath manifest = runErrorT $ do
-    archive <- fmap Zip.toArchive $ liftIO $ LBS.readFile archivePath
+getImageData
+    :: FilePath
+    -> Epub.Manifest
+    -> ErrorT String IO (Maybe LBS.ByteString)
+getImageData archivePath manifest = do
+    archive <- Zip.toArchive <$> (liftIO $ LBS.readFile archivePath)
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
@@ -229,8 +235,8 @@ saveImages
     :: FilePath
     -> FilePath
     -> LBS.ByteString
-    -> IO (Either String Bool)
-saveImages fullsizePath thumbnailPath imageByteString = runErrorT $ do
+    -> ErrorT String IO Bool
+saveImages fullsizePath thumbnailPath imageByteString = do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
         Left _ -> return False
         Right juicyImage -> do
