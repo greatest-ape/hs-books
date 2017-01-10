@@ -1,5 +1,6 @@
 # Important
   - Add a query argument for ignoring the cache
+  - Improve thumbnail quality somewhat
   - Be more granular in catching exceptions from getCoverImage
 
 # Not important

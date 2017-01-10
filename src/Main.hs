@@ -90,12 +90,17 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 
     let filenameHash = digestToHexByteString $ (hash $ Char8.pack $ show filenames :: Digest SHA256)
 
-    jsonCache <- liftIO $ readJsonCache filenameHash
+    skipCache <- CGI.getInput "skip-cache"
 
-    -- Either use cache JSON or generate it anew
-    json <- case jsonCache of
-        Left _          -> JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
-        Right jsonCache -> return $ LBS.fromStrict jsonCache
+    json <- case skipCache of
+        Just _  -> generateJson filenames
+        Nothing -> do
+            eitherJsonCache <- liftIO $ readJsonCache filenameHash
+
+            -- Either use cache JSON or generate it anew
+            case eitherJsonCache of
+                Left _          -> generateJson filenames
+                Right jsonCache -> return $ LBS.fromStrict jsonCache
 
     liftIO $ BS.writeFile filenameCachePath filenameHash
     liftIO $ LBS.writeFile jsonCachePath json
@@ -115,6 +120,8 @@ main = CGI.runCGI $ CGI.handleErrors $ do
                 then return jsonCache
                 else error "Filenames not matching hashed filenames"
 
+        generateJson filenames =
+            JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
 
 -- Attempt to create a Book from a file path to an epub file
 readBook :: String -> IO (Either String Book)
