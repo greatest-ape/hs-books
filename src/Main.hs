@@ -72,8 +72,8 @@ thumbnailDirectory      = "media/covers/small"
 filenameCachePath       = ".filename-cache" -- TODO implement
 jsonCachePath           = ".json-cache"
 
-imageMaxWidth  = 16 * 15 * 2
-imageMaxHeight = 16 * 15 * 2
+imageMaxWidth  = 16 * 15
+imageMaxHeight = 16 * 15
 
 
 
