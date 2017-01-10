@@ -271,8 +271,8 @@ saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
     let imageByteStringStrict = LBS.toStrict imageByteString
 
     image <- case mediaType of
-        "image/png" -> GD.loadJpegByteString imageByteStringStrict
-        "image/jpeg" -> GD.loadPngByteString imageByteStringStrict
+        "image/png" -> GD.loadPngByteString imageByteStringStrict
+        "image/jpeg" -> GD.loadJpegByteString imageByteStringStrict
         "image/gif" -> GD.loadGifByteString imageByteStringStrict
 
     -- Save full-size copy
