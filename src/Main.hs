@@ -165,8 +165,12 @@ getCoverImage archivePath manifest identifier = do
 
             case imageData of
                 Just imageByteString -> do
-                    success <- saveImages fullsizePath thumbnailPath imageByteString
-                    return $ if success then justCover else Nothing
+                    eitherSuccess <- saveImages fullsizePath thumbnailPath imageByteString
+
+                    case eitherSuccess of
+                        Right True -> return justCover
+                        _          -> return Nothing
+
                 Nothing -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
@@ -220,8 +224,8 @@ saveImages
     :: FilePath
     -> FilePath
     -> LBS.ByteString
-    -> IO Bool
-saveImages fullsizePath thumbnailPath imageByteString = do
+    -> IO (Either String Bool)
+saveImages fullsizePath thumbnailPath imageByteString = runErrorT $ do
     case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
         Left _ -> return False
         Right juicyImage -> do
@@ -230,10 +234,10 @@ saveImages fullsizePath thumbnailPath imageByteString = do
                 (newWidth, newHeight) = calculateNewSizes width height
                 newSize = Friday.ix2 newHeight newWidth
 
-            JuicyPixels.writePng thumbnailPath $
+            liftIO $ JuicyPixels.writePng thumbnailPath $
                 toJuicyRGBA $ Friday.resize Friday.TruncateInteger newSize fridayImage
 
-            JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
+            liftIO $ JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
 
             return True
 
