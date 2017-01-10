@@ -85,10 +85,29 @@ imageMaxHeight = 16 * 15
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
-    books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
+    let filenameHash = Char8.pack $ show filenames
+
+    jsonCache <- liftIO $ readJsonCache filenameHash
+
+    json <- case jsonCache of
+        Left _          -> JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
+        Right jsonCache -> return $ LBS.fromStrict jsonCache
+
+    liftIO $ BS.writeFile filenameCachePath filenameHash
+    liftIO $ LBS.writeFile jsonCachePath json
 
     CGI.setHeader "Content-type" "application/json"
-    CGI.outputFPS $ JSON.encode books
+    CGI.outputFPS json
+
+    where
+        readJsonCache :: BS.ByteString -> IO (Either SomeException BS.ByteString)
+        readJsonCache filenameHash = try $ do
+                filenameCache <- BS.readFile filenameCachePath
+                jsonCache     <- BS.readFile jsonCachePath
+
+                if filenameCache == filenameHash
+                    then return jsonCache
+                    else error "Filenames not matching hashed filenames"
 
 
 -- Attempt to create a Book from a file path to an epub file
