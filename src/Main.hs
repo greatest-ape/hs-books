@@ -111,6 +111,8 @@ main = CGI.runCGI $ CGI.handleErrors $ do
     CGI.outputFPS json
 
     where
+        -- Attempt to retrieve JSON from the cache
+        -- Fails when files can't be read and when the filename hashes match
         readJsonCache :: BS.ByteString -> IO (Either SomeException BS.ByteString)
         readJsonCache filenameHash = try $ do
             filenameCache <- BS.readFile filenameCachePath
@@ -120,6 +122,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
                 then return jsonCache
                 else error "Filenames not matching hashed filenames"
 
+        -- Use rest of program to create books and generate JSON from filenames
         generateJson filenames =
             JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
 
