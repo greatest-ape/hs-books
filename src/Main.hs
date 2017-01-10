@@ -108,12 +108,12 @@ main = CGI.runCGI $ CGI.handleErrors $ do
     where
         readJsonCache :: BS.ByteString -> IO (Either SomeException BS.ByteString)
         readJsonCache filenameHash = try $ do
-                filenameCache <- BS.readFile filenameCachePath
-                jsonCache     <- BS.readFile jsonCachePath
+            filenameCache <- BS.readFile filenameCachePath
+            jsonCache     <- BS.readFile jsonCachePath
 
-                if filenameCache == filenameHash
-                    then return jsonCache
-                    else error "Filenames not matching hashed filenames"
+            if filenameCache == filenameHash
+                then return jsonCache
+                else error "Filenames not matching hashed filenames"
 
 
 -- Attempt to create a Book from a file path to an epub file
