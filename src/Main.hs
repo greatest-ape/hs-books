@@ -23,7 +23,7 @@ import Control.Monad.Error (ErrorT, runErrorT, liftIO)
 import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy)
 import Data.Char (toLower)
 import Data.Either (rights)
-import Data.List (isInfixOf, nub, scanl', words, unwords)
+import Data.List (isSuffixOf, isInfixOf, nub, scanl', words, unwords)
 import Data.List.Split (splitOn)
 import Data.Maybe (catMaybes)
 import Data.String (fromString)
@@ -80,7 +80,7 @@ imageMaxHeight = 16 * 15 * 2
 -- and send them to the client through CGI
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
-    filenames <- CGI.liftIO $ listDirectory bookDirectory
+    filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
     books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
 
     CGI.setHeader "Content-type" "application/json\n"
