@@ -69,7 +69,7 @@ bookDirectory           = "media/books"
 fullsizeImageDirectory  = "media/covers/full"
 thumbnailDirectory      = "media/covers/small"
 
-jpegQuality             = 70
+jpegQuality             = 80
 
 filenameCachePath       = ".filename-cache"
 jsonCachePath           = ".json-cache"
