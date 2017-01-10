@@ -242,7 +242,7 @@ saveImages fullsizePath thumbnailPath imageByteString = do
         Right juicyImage -> do
             let fridayImage = toFridayRGBA $ JuicyPixels.convertRGBA8 juicyImage
                 Friday.Z Friday.:. height Friday.:. width = Friday.manifestSize fridayImage
-                (newWidth, newHeight) = calculateNewSizes width height
+                (newWidth, newHeight) = calculateThumbnailSize width height
                 newSize = Friday.ix2 newHeight newWidth
 
             liftIO $ JuicyPixels.writePng thumbnailPath $
@@ -252,19 +252,22 @@ saveImages fullsizePath thumbnailPath imageByteString = do
 
             return True
 
-    where
-        calculateNewSizes :: Int -> Int -> (Int, Int)
-        calculateNewSizes width height =
-            case compare width height of
-                EQ -> (imageMaxWidth, imageMaxHeight)
-                LT -> swap $ scale height width imageMaxHeight
-                GT -> scale width height imageMaxWidth
 
+calculateThumbnailSize :: Int -> Int -> (Int, Int)
+calculateThumbnailSize width height =
+    case compare width height of
+        EQ -> (imageMaxWidth, imageMaxHeight)
+        LT -> swap $ scale height width imageMaxHeight
+        GT -> scale width height imageMaxWidth
+
+    where
         scale :: Int -> Int -> Int -> (Int, Int)
         scale a b maxA =
             let newA = fromIntegral maxA
                 newB = fromIntegral b * (newA / fromIntegral a)
             in (round newA, round newB)
+
+
 
 -- * Utils
 
