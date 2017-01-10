@@ -84,7 +84,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
     books     <- rights <$> (CGI.liftIO $ mapM readBook filenames)
 
-    CGI.setHeader "Content-type" "application/json\n"
+    CGI.setHeader "Content-type" "application/json"
     CGI.outputFPS $ JSON.encode books
 
 
