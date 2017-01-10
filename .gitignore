@@ -9,3 +9,6 @@
 
 public_html/media/**/*.png
 public_html/media/**/*.jpg
+
+public_html/.filename-cache
+public_html/.json-cache
