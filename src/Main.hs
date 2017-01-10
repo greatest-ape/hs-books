@@ -164,20 +164,20 @@ getCoverImage archivePath manifest identifier = do
             imageData <- getImageData archivePath manifest
 
             case imageData of
-                Just imageByteString -> do
+                Right (Just imageByteString) -> do
                     eitherSuccess <- saveImages fullsizePath thumbnailPath imageByteString
 
                     case eitherSuccess of
                         Right True -> return justCover
                         _          -> return Nothing
 
-                Nothing -> return Nothing
+                _ -> return Nothing
 
 -- Given an archive path and a manifest, attempt to find a cover image and
 -- return its data as a ByteString
-getImageData :: FilePath -> Epub.Manifest -> IO (Maybe LBS.ByteString)
-getImageData archivePath manifest = do
-    archive <- Zip.toArchive <$> LBS.readFile archivePath
+getImageData :: FilePath -> Epub.Manifest -> IO (Either String (Maybe LBS.ByteString))
+getImageData archivePath manifest = runErrorT $ do
+    archive <- fmap Zip.toArchive $ liftIO $ LBS.readFile archivePath
 
     return $ do
         manifestItem <- getCoverManifestItem manifest
