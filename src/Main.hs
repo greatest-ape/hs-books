@@ -88,24 +88,21 @@ main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
 
-    -- Cache logic
+    -- Check cache, generate JSON anew if necessary
 
     let filenameHash = digestToHexByteString $ (hash $ Char8.pack $ show filenames :: Digest SHA256)
 
     skipCache <- CGI.getInput "skip-cache"
 
     json <- case skipCache of
-        Just _  -> generateJson filenames
+        Just _  -> generateJsonAndSaveState filenames  filenameHash
         Nothing -> do
             eitherJsonCache <- liftIO $ readJsonCache filenameHash
 
             -- Either use cache JSON or generate it anew
             case eitherJsonCache of
-                Left _          -> generateJson filenames
+                Left _          -> generateJsonAndSaveState filenames filenameHash
                 Right jsonCache -> return $ LBS.fromStrict jsonCache
-
-    liftIO $ BS.writeFile filenameCachePath filenameHash
-    liftIO $ LBS.writeFile jsonCachePath json
 
     -- CGI output
 
@@ -114,7 +111,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 
     where
         -- Attempt to retrieve JSON from the cache
-        -- Fails when files can't be read and when the filename hashes match
+        -- Fails when files can't be or and when the filename hashes don't match
         readJsonCache :: BS.ByteString -> IO (Either SomeException BS.ByteString)
         readJsonCache filenameHash = try $ do
             filenameCache <- BS.readFile filenameCachePath
@@ -125,8 +122,14 @@ main = CGI.runCGI $ CGI.handleErrors $ do
                 else error "Filenames not matching hashed filenames"
 
         -- Use rest of program to create books and generate JSON from filenames
-        generateJson filenames =
-            JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
+        -- Save the results in cache
+        generateJsonAndSaveState filenames filenameHash = do
+            json <- JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
+
+            liftIO $ BS.writeFile filenameCachePath filenameHash
+            liftIO $ LBS.writeFile jsonCachePath json
+
+            return json
 
 
 -- Attempt to create a Book from a file path to an epub file
@@ -199,7 +202,7 @@ extractNameWithComma creator =
 
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
--- If found, save it in two formats and return a Cover
+-- If found, save it in two sizes and return a Cover
 getCoverImage
     :: FilePath
     -> Epub.Manifest
@@ -228,6 +231,7 @@ getCoverImage archivePath manifest identifier = try $ do
 
                 _ -> return Nothing
 
+
 -- Given an archive path and a manifest, attempt to find a cover image and
 -- return its data as a ByteString
 getImageData
@@ -254,8 +258,8 @@ getCoverManifestItem (Epub.Manifest items) =
         hasCoverInID manifestItem   = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
 
 
--- Extract a file in a zip archive by the file path. Looks for the file in all
--- folders in the archive
+-- Extract a file in a zip archive by the file path.
+-- Looks for the file in all folders in the archive.
 findFileInArchive :: Zip.Archive -> FilePath -> Maybe LBS.ByteString
 findFileInArchive archive path =
     let folders = extractFolders $ Zip.filesInArchive archive
@@ -328,6 +332,8 @@ saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
     return True
 
 
+-- On the basis of given dimensions and settings (max sizes), calculate a
+-- thumbnail size
 calculateThumbnailSize :: Int -> Int -> (Int, Int)
 calculateThumbnailSize width height =
     case compare width height of
