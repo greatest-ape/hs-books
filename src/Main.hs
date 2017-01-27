@@ -13,6 +13,7 @@ import qualified Data.Aeson as JSON
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Text as Text
 import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
@@ -48,7 +49,7 @@ data Cover = Cover {
 
 
 data Book = Book {
-    _path       :: FilePath,
+    _path       :: Text.Text,
     _maybeCover :: Maybe Cover,
     _titles     :: [String],
     _creators   :: [String],
@@ -155,7 +156,7 @@ readBook archiveFilename = runErrorT $ do
         publishers  = Epub.metaPublishers metadata
 
     return $ Book {
-        _path       = path,
+        _path       = Text.pack path,
         _maybeCover = maybeCoverImage,
         _titles     = titles,
         _creators   = creators,
