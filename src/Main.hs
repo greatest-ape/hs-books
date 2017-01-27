@@ -58,8 +58,11 @@ data Book = Book {
 } deriving (Generic, Show)
 
 
-instance JSON.ToJSON Cover
-instance JSON.ToJSON Book
+instance JSON.ToJSON Cover where
+    toEncoding = JSON.genericToEncoding JSON.defaultOptions
+
+instance JSON.ToJSON Book where
+    toEncoding = JSON.genericToEncoding JSON.defaultOptions
 
 
 
