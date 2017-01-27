@@ -110,7 +110,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 
     -- CGI output
 
-    CGI.setHeader "Content-type" "text/plain; charset=utf-8"
+    CGI.setHeader "Content-type" "application/json; charset=utf-8"
     CGI.outputFPS json
 
     where
