@@ -14,6 +14,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
 import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
 import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
 import qualified Vision.Image as Friday
@@ -110,7 +111,7 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 
     -- CGI output
 
-    CGI.setHeader "Content-type" "application/json; charset=utf-8"
+    CGI.setHeader "Content-type" "application/json"
     CGI.outputFPS json
 
     where
@@ -159,7 +160,7 @@ readBook archiveFilename = runErrorT $ do
         publishers  = Epub.metaPublishers metadata
 
     return $ Book {
-        _path       = Text.pack path,
+        _path       = Text.decodeUtf8 $ Char8.pack path,
         _maybeCover = maybeCoverImage,
         _titles     = titles,
         _creators   = creators,
