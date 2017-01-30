@@ -1,17 +1,146 @@
+var Book = function(title, path, cover, author, $author){
+    var self = {};
+
+    self.title   = title;
+    self.path    = path;
+    self.cover   = cover;
+    self.author  = author;
+    self.$author = $author;
+
+    self.$bookWithImage = null;
+    self.$bookInList = null;
+
+    self.init = function(){
+        self.renderWithImage();
+        self.renderInList();
+    }
+
+    self.matchesKeywords = function(keywords){
+        return keywords.all(function(keyword){
+            return self.title.includes(keyword)
+        })
+    }
+    
+    self.show = function(){
+        self.$bookWithImage.show();
+        self.$bookInList.show();
+    }
+    
+    self.hide = function(){
+        self.$bookWithImage.hide();
+        self.$bookInList.hide();
+    }
+
+    self.renderWithImage = function(){
+        var $book = $('.prototype-book').clone();
+
+        $book.removeClass('prototype-book').addClass('book');
+
+        if (self.cover){
+            $book.find('.image a').attr('href', self.path);
+            $book.find('img').attr('src', self.cover._thumbnailPath);
+        }
+
+        $book.find('.title').html(self.title);
+        $book.find('.creator').html(self.author);
+
+        $('#books').append($book);
+
+        self.$bookWithImage = $book;
+    }
+
+    self.renderInList = function(){
+        var $book = $('.prototype-creator-book').clone();
+        
+        $book.removeClass('prototype-creator-book').addClass('book');
+        $book.find('a').attr('href', self.path).html(self.title);
+        
+        self.$author.find('.books').append($book);
+
+        self.$bookInList = $book;
+    }
+
+    self.init();
+
+    return self;
+}
+
+
+var Author = function(name, books){
+    var self = {};
+
+    self.name = "";
+    self.books = [];
+
+    self.$author = null;
+
+    self.init = function(){
+        self.name = name;
+
+        self.render();
+
+        self.books = books.map(function(book){
+            return Book(book._titles[0], book._path, book._maybeCover, self.name, self.$author);
+        });
+    }
+
+    self.showOnMatch = function(keywords){
+        var matchingBooks = self.books.filter(function(book){
+            return book.matchesKeywords(keywords);
+        })
+
+        var authorMatch = keywords.all(function(keyword){
+            return self.title.includes(keyword)
+        })
+
+        // Display all books from this author
+        if (authorMatch) {
+            self.$author.show();
+
+            $.each(self.books, function(i, book) { book.show() });
+        }
+        // Display all matching books
+        else if (matchingBooks.length > 0) {
+            self.$author.show();
+
+            $.each(matchingBooks, function(i, book) { book.show() });
+        }
+        // Hide author and books
+        else {
+            self.$author.hide();
+
+            $.each(self.books, function(i, book) { book.hide() });
+        }
+    }
+
+    self.render = function(){
+        self.$author = $('.prototype-creator').clone();
+
+        self.$author.removeClass('prototype-creator').addClass('creator');
+
+        self.$author.find('.name').html(self.name);
+
+        self.$author.appendTo($('#creators'));
+    }
+
+    self.init();
+
+    return self;
+}
+
+
 var App = function($, books){
     var self = {};
     
-    self._books = [];
-    self._creators = {};
+    self.authors = [];
 
     self.init = function(books){
-        self.creators = self.buildCreators(books);
+        var creators = self.buildCreators(books);
         
         self.hideLoading();
-        
-        self.renderCreators();
-        self.renderBooks();
-        
+
+        self.createAuthors(creators);
+
         self.makeCreatorsGoToBottom();
     };
     
@@ -51,53 +180,12 @@ var App = function($, books){
         
         return creators;
     };
-    
-    self.hideLoading = function(){
-        $('#loading').hide();
-    };
-    
-    self.renderCreators = function(){
-        self.iterate_over_dict_sorted(self.creators, function(creator, books) {
-            var $creator = $('.prototype-creator').clone();
 
-            $creator.removeClass('prototype-creator').addClass('creator');
-
-            $creator.find('.name').html(creator);
-            
-            $.each(books, function(i, book){
-                var $book = $('.prototype-creator-book').clone();
-                
-                $book.removeClass('prototype-creator-book').addClass('book');
-                $book.find('a').attr('href', book._path).html(book._titles[0]);
-                
-                $creator.find('.books').append($book)
-            });
-
-            $('#creators').append($creator);
+    self.createAuthors = function(creators){
+        self.iterate_over_dict_sorted(creators, function(creator, books) {
+            self.authors.push(Author(creator, books));
         });
-    };
-    
-    self.renderBooks = function(){
-        self.iterate_over_dict_sorted(self.creators, function(creator, books){
-            $.each(books, function(i, book){
-                var $book = $('.prototype-book').clone();
-
-                $book.removeClass('prototype-book').addClass('book');
-
-                var cover = book._maybeCover;
-
-                if (cover){
-                    $book.find('.image a').attr('href', book._path);
-                    $book.find('img').attr('src', cover._thumbnailPath);
-                }
-
-                $book.find('.title').html(book._titles[0]);
-                $book.find('.creator').html(book._creators[0]);
-
-                $('#books').append($book);
-            });
-        });
-    };
+    }
     
     self.iterate_over_dict_sorted = function(dict, f){
         var keys = Object.keys(dict);
@@ -112,6 +200,10 @@ var App = function($, books){
         if ($(window).width() > 650){
             $('#creators').height($(document).height());
         }
+    };
+    
+    self.hideLoading = function(){
+        $('#loading').hide();
     };
     
     self.init(books);
