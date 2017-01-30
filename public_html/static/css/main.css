@@ -78,6 +78,14 @@ a:hover, a:active, a:focus {
     padding-bottom: 1rem;
     border-left: 2px solid #ccc;
 }
+    #creators #filter {
+        margin-bottom: 2rem;
+    }
+        #creators #filter input {
+            font-size: inherit;
+            padding: 0.25rem;
+            width: calc(100% - 1.5rem - 2px);
+        }
     #creators .creator {
         margin-bottom: 1rem;
     }
