@@ -20,8 +20,8 @@ var Book = function($, title, path, cover, author, authorInstance){
     }
 
     self.matchesKeywords = function(keywords){
-        return keywords.all(function(keyword){
-            return self.title.includes(keyword)
+        return keywords.every(function(keyword){
+            return self.title.toLowerCase().indexOf(keyword) > -1
         })
     }
     
@@ -93,8 +93,8 @@ var Author = function($, name, books){
             return book.matchesKeywords(keywords);
         })
 
-        var authorMatch = keywords.all(function(keyword){
-            return self.title.includes(keyword)
+        var authorMatch = keywords.every(function(keyword){
+            return self.name.toLowerCase().indexOf(keyword) > -1
         })
 
         // Display all books from this author
@@ -153,7 +153,7 @@ var App = function($, books){
     };
 
     self.search = function(query){
-        var keywords = query.split("");
+        var keywords = query.trim().toLowerCase().split(" ");
 
         $.each(self.authors, function(i, author){
             author.showOnMatch(keywords);
@@ -226,7 +226,11 @@ var App = function($, books){
 (function($){
     $(function(){
         $.getJSON('app.cgi', function(books){
-            App($, books);
+            var app = App($, books);
+
+            $('#filter input').on('change', function(){
+                app.search($(this).val());
+            });
         });
     });
 })(jQuery);
