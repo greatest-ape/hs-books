@@ -97,6 +97,10 @@ var Author = function($, name, books){
             return self.name.toLowerCase().indexOf(keyword) > -1
         })
 
+        // Start with hiding everything
+        self.$author.hide();
+        $.each(self.books, function(i, book) { book.hide() });
+
         // Display all books from this author
         if (authorMatch) {
             self.$author.show();
