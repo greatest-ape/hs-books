@@ -1,18 +1,22 @@
-var Book = function(title, path, cover, author, $author){
+var Book = function($, title, path, cover, author, authorInstance){
     var self = {};
 
     self.title   = title;
     self.path    = path;
     self.cover   = cover;
     self.author  = author;
-    self.$author = $author;
+    self.authorInstance = authorInstance;
 
     self.$bookWithImage = null;
     self.$bookInList = null;
 
     self.init = function(){
-        self.renderWithImage();
-        self.renderInList();
+
+    }
+
+    self.render = function(){
+        self._renderWithImage();
+        self._renderInList();
     }
 
     self.matchesKeywords = function(keywords){
@@ -31,7 +35,7 @@ var Book = function(title, path, cover, author, $author){
         self.$bookInList.hide();
     }
 
-    self.renderWithImage = function(){
+    self._renderWithImage = function(){
         var $book = $('.prototype-book').clone();
 
         $book.removeClass('prototype-book').addClass('book');
@@ -49,13 +53,13 @@ var Book = function(title, path, cover, author, $author){
         self.$bookWithImage = $book;
     }
 
-    self.renderInList = function(){
+    self._renderInList = function(){
         var $book = $('.prototype-creator-book').clone();
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
         
-        self.$author.find('.books').append($book);
+        self.authorInstance.$author.find('.books').append($book);
 
         self.$bookInList = $book;
     }
@@ -66,7 +70,7 @@ var Book = function(title, path, cover, author, $author){
 }
 
 
-var Author = function(name, books){
+var Author = function($, name, books){
     var self = {};
 
     self.name = "";
@@ -77,11 +81,11 @@ var Author = function(name, books){
     self.init = function(){
         self.name = name;
 
-        self.render();
-
         self.books = books.map(function(book){
-            return Book(book._titles[0], book._path, book._maybeCover, self.name, self.$author);
+            return Book($, book._titles[0], book._path, book._maybeCover, self.name, self);
         });
+
+        self.render();
     }
 
     self.showOnMatch = function(keywords){
@@ -121,6 +125,10 @@ var Author = function(name, books){
         self.$author.find('.name').html(self.name);
 
         self.$author.appendTo($('#creators'));
+
+        $.each(self.books, function(i, book){
+            book.render();
+        });
     }
 
     self.init();
@@ -183,7 +191,7 @@ var App = function($, books){
 
     self.createAuthors = function(creators){
         self.iterate_over_dict_sorted(creators, function(creator, books) {
-            self.authors.push(Author(creator, books));
+            self.authors.push(Author($, creator, books));
         });
     }
     
