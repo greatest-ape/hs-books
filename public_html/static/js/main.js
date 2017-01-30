@@ -143,16 +143,24 @@ var App = function($, books){
     self.authors = [];
 
     self.init = function(books){
-        var creators = self.groupBooksByAuthor(books);
+        var creators = self._groupBooksByAuthor(books);
         
         $('#loading').hide();
 
-        self.createAuthors(creators);
+        self._createAuthors(creators);
 
-        self.makeAuthorsGoToBottom();
+        self._makeAuthorsGoToBottom();
     };
+
+    self.search = function(query){
+        var keywords = query.split("");
+
+        $.each(self.authors, function(i, author){
+            author.showOnMatch(keywords);
+        });
+    }
     
-    self.groupBooksByAuthor = function(books){
+    self._groupBooksByAuthor = function(books){
         var authors = {};
 
         // Add books to their author
@@ -189,13 +197,13 @@ var App = function($, books){
         return authors;
     };
 
-    self.createAuthors = function(creators){
-        self.iterate_over_dict_sorted(creators, function(creator, books) {
+    self._createAuthors = function(creators){
+        self._iterate_over_dict_sorted(creators, function(creator, books) {
             self.authors.push(Author($, creator, books));
         });
     }
     
-    self.iterate_over_dict_sorted = function(dict, f){
+    self._iterate_over_dict_sorted = function(dict, f){
         var keys = Object.keys(dict);
         keys.sort();
         
@@ -204,7 +212,7 @@ var App = function($, books){
         });
     };
     
-    self.makeAuthorsGoToBottom = function(){
+    self._makeAuthorsGoToBottom = function(){
         if ($(window).width() > 650){
             $('#creators').height($(document).height());
         }
