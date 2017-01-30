@@ -135,34 +135,34 @@ var App = function($, books){
     self.authors = [];
 
     self.init = function(books){
-        var creators = self.buildCreators(books);
+        var creators = self.groupBooksByAuthor(books);
         
-        self.hideLoading();
+        $('#loading').hide();
 
         self.createAuthors(creators);
 
-        self.makeCreatorsGoToBottom();
+        self.makeAuthorsGoToBottom();
     };
     
-    self.buildCreators = function(books){
-        var creators = {};
+    self.groupBooksByAuthor = function(books){
+        var authors = {};
 
-        // Add books to their creator
+        // Add books to their author
         
         $.each(books, function(i, book){
-            var creator = book._creators[0];
+            var author = book._creators[0];
 
-            if (!(creator in creators)){
-                creators[creator] = [];
+            if (!(author in authors)){
+                authors[author] = [];
             }
 
-            creators[creator].push(book);
+            authors[author].push(book);
         });
         
-        // Sort books within the creators
+        // Sort books within the authors
         
-        Object.keys(creators).map(function(key, index){
-            creators[key].sort(function(book1, book2) {
+        Object.keys(authors).map(function(key, index){
+            authors[key].sort(function(book1, book2) {
                 var title1 = book1._titles[0];
                 var title2 = book2._titles[0];
 
@@ -178,7 +178,7 @@ var App = function($, books){
             });
         });
         
-        return creators;
+        return authors;
     };
 
     self.createAuthors = function(creators){
@@ -196,14 +196,10 @@ var App = function($, books){
         });
     };
     
-    self.makeCreatorsGoToBottom = function(){
+    self.makeAuthorsGoToBottom = function(){
         if ($(window).width() > 650){
             $('#creators').height($(document).height());
         }
-    };
-    
-    self.hideLoading = function(){
-        $('#loading').hide();
     };
     
     self.init(books);
