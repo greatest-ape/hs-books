@@ -117,6 +117,12 @@ var Author = function($, name, books){
         }
     }
 
+    self.showAll = function(){
+        self.$author.show();
+
+        $.each(self.books, function(i, book) { book.show() });
+    }
+
     self.render = function(){
         self.$author = $('.prototype-creator').clone();
 
@@ -157,6 +163,12 @@ var App = function($, books){
 
         $.each(self.authors, function(i, author){
             author.showOnMatch(keywords);
+        });
+    }
+
+    self.showAll = function(){
+        $.each(self.authors, function(i, author){
+            author.showAll();
         });
     }
     
@@ -229,7 +241,14 @@ var App = function($, books){
             var app = App($, books);
 
             $('#filter input').on('change', function(){
-                app.search($(this).val());
+                var query = $(this).val();
+
+                if (query == ''){
+                    app.showAll();
+                }
+                else {
+                    app.search(query);
+                }
             });
         });
     });
