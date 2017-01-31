@@ -219,7 +219,7 @@ getTextBytes archivePath = do
 
     where
         entryIsHtmlFile entry =
-            let relativePath = map Char8.toLower $ Zip.eRelativePath entry
+            let relativePath = map toLower $ Zip.eRelativePath entry
             in any (\ending -> ending `isSuffixOf` relativePath)
                 [".html", ".htm", ".xhtml", ".xml"]
 
