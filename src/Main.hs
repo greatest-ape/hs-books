@@ -218,9 +218,10 @@ getTextBytes archivePath = do
 
 
     where
-        entryIsHtmlFile entry = any
-            (\ending -> ending `isSuffixOf` Zip.eRelativePath entry)
-            [".html", ".htm", ".xhtml", ".xml"]
+        entryIsHtmlFile entry =
+            let relativePath = map Char8.toLower $ Zip.eRelativePath entry
+            in any (\ending -> ending `isSuffixOf` relativePath)
+                [".html", ".htm", ".xhtml", ".xml"]
 
         stripMarkup :: LBS.ByteString -> LBS.ByteString
         stripMarkup s = LBS.concat $ map TagSoup.fromTagText $
