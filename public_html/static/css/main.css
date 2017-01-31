@@ -80,6 +80,7 @@ a:hover, a:active, a:focus {
 }
     #creators #filter {
         margin-bottom: 2rem;
+        display: none;
     }
         #creators #filter input {
             font-size: inherit;

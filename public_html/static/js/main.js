@@ -159,6 +159,8 @@ var App = function($, books){
 
         self._createAuthors(creators);
 
+        $('#filter').show();
+
         self._makeAuthorsGoToBottom();
     };
 
