@@ -212,7 +212,14 @@ getTextBytes archivePath = do
     allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
 
     return $ sum $ map (fromIntegral . Zip.eUncompressedSize) $
-        filter (\entry -> ".html" `isSuffixOf` Zip.eRelativePath entry) allEntries
+        filter entryIsHtmlFile allEntries
+
+
+    where
+        entryIsHtmlFile entry =
+            let fileEndings = [".html", ".htm", ".xhtml"]
+                matches = filter (\ending -> ending `isSuffixOf` Zip.eRelativePath entry) fileEndings
+            in 0 < (length matches)
 
 
 -- * Cover images
