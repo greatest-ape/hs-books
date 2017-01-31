@@ -1,10 +1,11 @@
-var Book = function($, title, path, cover, author, authorInstance){
+var Book = function($, title, path, cover, author, textBytes, authorInstance){
     var self = {};
 
-    self.title   = title;
-    self.path    = path;
-    self.cover   = cover;
-    self.author  = author;
+    self.title     = title;
+    self.path      = path;
+    self.cover     = cover;
+    self.author    = author;
+    self.textBytes = textBytes;
     self.authorInstance = authorInstance;
 
     self.$bookWithImage = null;
@@ -82,7 +83,7 @@ var Author = function($, name, books){
         self.name = name;
 
         self.books = books.map(function(book){
-            return Book($, book._titles[0], book._path, book._maybeCover, self.name, self);
+            return Book($, book._titles[0], book._path, book._maybeCover, self.name, book._textBytes, self);
         });
 
         self.render();
