@@ -17,6 +17,7 @@ import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
+import qualified Text.HTML.TagSoup as TagSoup
 import qualified Vision.Image as Friday
 import qualified Vision.Primitive.Shape as Friday
 
@@ -211,14 +212,19 @@ getTextBytes :: FilePath -> IO Integer
 getTextBytes archivePath = do
     allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
 
-    return $ sum $ map (fromIntegral . Zip.eUncompressedSize) $
-        filter entryIsHtmlFile allEntries
+    return $ sum $ map
+        (fromIntegral . LBS.length . stripMarkup . Zip.eCompressedData)
+        (filter entryIsHtmlFile allEntries)
 
 
     where
         entryIsHtmlFile entry = any
             (\ending -> ending `isSuffixOf` Zip.eRelativePath entry)
             [".html", ".htm", ".xhtml", ".xml"]
+
+        stripMarkup :: LBS.ByteString -> LBS.ByteString
+        stripMarkup s = LBS.concat $ map TagSoup.fromTagText $
+            filter TagSoup.isTagText $ TagSoup.parseTags s
 
 
 -- * Cover images

@@ -30,5 +30,6 @@ executable hs-books
                      , JuicyPixels
                      , mtl
                      , split
+                     , tagsoup
                      , text
                      , zip-archive
