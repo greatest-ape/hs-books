@@ -98,9 +98,9 @@ main = CGI.runCGI $ CGI.handleErrors $ do
 
     let filenameHash = digestToHexByteString $ (hash $ Char8.pack $ show filenames :: Digest SHA256)
 
-    skipCache <- CGI.getInput "skip-cache"
+    forceReload <- CGI.getInput "force-reload"
 
-    json <- case skipCache of
+    json <- case forceReload of
         Just _  -> generateJsonAndSaveState filenames  filenameHash
         Nothing -> do
             eitherJsonCache <- liftIO $ readJsonCache filenameHash
