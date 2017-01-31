@@ -55,7 +55,8 @@ data Book = Book {
     _titles     :: [String],
     _creators   :: [String],
     _dates      :: [String],
-    _publishers :: [String]
+    _publishers :: [String],
+    _textBytes  :: Integer
 } deriving (Generic, Show)
 
 
@@ -149,6 +150,8 @@ readBook archiveFilename = runErrorT $ do
     package         <- Epub.getPackage xmlString
     metadata        <- Epub.getMetadata xmlString
 
+    textBytes <- liftIO $ getTextBytes path
+
     eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest identifier
     let maybeCoverImage = case eitherMaybeCoverImage of
             Right maybeCoverImage -> maybeCoverImage
@@ -165,7 +168,8 @@ readBook archiveFilename = runErrorT $ do
         _titles     = titles,
         _creators   = creators,
         _dates      = dates,
-        _publishers = publishers
+        _publishers = publishers,
+        _textBytes  = textBytes
     }
 
 
@@ -200,6 +204,15 @@ extractNameWithComma creator =
             in if length parts == 1
                 then last parts
                 else last parts ++ ", " ++ unwords (init parts)
+
+
+-- Get the number of bytes the html files in an epub archive take up
+getTextBytes :: FilePath -> IO Integer
+getTextBytes archivePath = do
+    allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
+
+    return $ sum $ map (fromIntegral . Zip.eUncompressedSize) $
+        filter (\entry -> ".html" `isSuffixOf` Zip.eRelativePath entry) allEntries
 
 
 -- * Cover images
