@@ -107,6 +107,11 @@ a:hover, a:active, a:focus {
                 line-height: 1.5rem;
                 margin-top: 0.5rem;
             }
+                #creators .creator .books .book span {
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+
             
 #prototypes {
     display: none;

@@ -59,6 +59,7 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
+        $book.find('span').append(" " + Math.round(self.textBytes / (1024 * 100)));
         
         self.authorInstance.$author.find('.books').append($book);
 
