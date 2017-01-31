@@ -216,10 +216,9 @@ getTextBytes archivePath = do
 
 
     where
-        entryIsHtmlFile entry =
-            let fileEndings = [".html", ".htm", ".xhtml", ".xml"]
-                matches = filter (\ending -> ending `isSuffixOf` Zip.eRelativePath entry) fileEndings
-            in 0 < (length matches)
+        entryIsHtmlFile entry = any
+            (\ending -> ending `isSuffixOf` Zip.eRelativePath entry)
+            [".html", ".htm", ".xhtml", ".xml"]
 
 
 -- * Cover images
