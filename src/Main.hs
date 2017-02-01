@@ -213,7 +213,7 @@ getTextBytes archivePath = do
     allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
 
     return $ sum $ map
-        (fromIntegral . LBS.length . stripMarkup . Zip.eCompressedData)
+        (getLengthWithoutMarkup . Zip.eCompressedData)
         (filter entryIsHtmlFile allEntries)
 
 
@@ -223,9 +223,11 @@ getTextBytes archivePath = do
             in any (\ending -> ending `isSuffixOf` relativePath)
                 [".html", ".htm", ".xhtml", ".xml"]
 
-        stripMarkup :: LBS.ByteString -> LBS.ByteString
-        stripMarkup s = LBS.concat $ map TagSoup.fromTagText $
-            filter TagSoup.isTagText $ TagSoup.parseTags s
+        getLengthWithoutMarkup :: LBS.ByteString -> Integer
+        getLengthWithoutMarkup s =
+            let tagTexts = filter TagSoup.isTagText $ TagSoup.parseTags s
+            in fromIntegral $ sum $ map (LBS.length . TagSoup.fromTagText) tagTexts
+
 
 
 -- * Cover images
