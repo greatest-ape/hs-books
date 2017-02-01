@@ -57,7 +57,7 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
     self._renderInList = function(){
         var $book = $('.prototype-creator-book').clone();
 
-        var lengthIndicator = Math.round(4 * Math.sqrt(self.textBytes / (1024 * 10)));
+        var lengthIndicator = Math.round(3 * Math.pow(self.textBytes / (1024 * 10), 2/3));
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
