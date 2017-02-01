@@ -110,6 +110,9 @@ a:hover, a:active, a:focus {
                 #creators .creator .books .book span {
                     font-size: 12px;
                     font-weight: bold;
+                    background-color: #ccc;
+                    display: inline-block;
+                    margin-left: 0.0rem;
                 }
 
             

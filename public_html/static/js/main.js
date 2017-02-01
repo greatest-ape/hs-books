@@ -56,10 +56,12 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
 
     self._renderInList = function(){
         var $book = $('.prototype-creator-book').clone();
+
+        var lengthIndicator = Math.round(4 * Math.sqrt(self.textBytes / (1024 * 10)));
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
-        $book.find('span').append(" " + Math.round(self.textBytes / (1024 * 10)));
+        $book.find('span').css('width', lengthIndicator + 'px').html('&nbsp;');
         
         self.authorInstance.$author.find('.books').append($book);
 
