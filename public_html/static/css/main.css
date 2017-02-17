@@ -59,15 +59,8 @@ a:hover, a:active, a:focus {
             max-width: 100%;
         }
 
-    #books .book .length-indicator {
-        margin-top: 0.5rem;
-
-        line-height: 1rem;
-        background-color: #ccc;
-        display: block;
-    }
     #books .book .creator {
-        margin-top: 0.5rem;
+        margin-top: 1rem;
 
         font-weight: bold;
     }
@@ -77,6 +70,10 @@ a:hover, a:active, a:focus {
         font-weight: normal;
         line-height: 1.5rem;
     }
+        #books .book .length-indicator {
+            background-color: #ccc;
+            display: inline-block;
+        }
 
 #creators {
     float: left;
@@ -119,7 +116,7 @@ a:hover, a:active, a:focus {
                     background-color: #ccc;
                     display: inline-block;
                     margin-left: 0.0rem;
-                    line-height: 1rem;
+                    line-height: 1.5rem;
                 }
 
             
