@@ -48,8 +48,8 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
             $book.find('img').attr('src', self.cover._thumbnailPath);
         }
 
-        $book.find('.title .title-inner').html(self.title);
         $book.find('.creator').html(self.author);
+        $book.find('.title .title-inner').html(self.title).attr("href", self.path);
         $book.find('.title .length').css('width', self.lengthIndicator + 'px').html('&nbsp;');
 
         $('#books').append($book);
