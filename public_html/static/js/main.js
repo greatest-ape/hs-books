@@ -49,8 +49,8 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
         }
 
         $book.find('.creator').html(self.author);
-        $book.find('.title .title-inner').html(self.title).attr("href", self.path);
-        $book.find('.title .length').css('width', self.lengthIndicator + 'px').html('&nbsp;');
+        $book.find('.title a').html(self.title).attr("href", self.path);
+        $book.find('.length-indicator').css('width', self.lengthIndicator + 'px').html('&nbsp;');
 
         $('#books').append($book);
 
