@@ -69,6 +69,11 @@ a:hover, a:active, a:focus {
         font-weight: normal;
         line-height: 1.5rem;
     }
+        #books .book .title .length {
+            background-color: #ccc;
+            display: inline-block;
+            margin-left: 0.0rem;
+        }
 
 #creators {
     float: left;
@@ -108,8 +113,6 @@ a:hover, a:active, a:focus {
                 margin-top: 0.5rem;
             }
                 #creators .creator .books .book span {
-                    font-size: 12px;
-                    font-weight: bold;
                     background-color: #ccc;
                     display: inline-block;
                     margin-left: 0.0rem;

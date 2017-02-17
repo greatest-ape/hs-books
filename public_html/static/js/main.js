@@ -11,8 +11,10 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
     self.$bookWithImage = null;
     self.$bookInList = null;
 
-    self.init = function(){
+    self.lengthIndicator = 0;
 
+    self.init = function(){
+        self.lengthIndicator = Math.round(2 * Math.pow(self.textBytes / (1024 * 1), 1/2));
     }
 
     self.render = function(){
@@ -46,8 +48,9 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
             $book.find('img').attr('src', self.cover._thumbnailPath);
         }
 
-        $book.find('.title').html(self.title);
+        $book.find('.title .title-inner').html(self.title);
         $book.find('.creator').html(self.author);
+        $book.find('.title .length').css('width', self.lengthIndicator + 'px').html('&nbsp;');
 
         $('#books').append($book);
 
@@ -56,12 +59,10 @@ var Book = function($, title, path, cover, author, textBytes, authorInstance){
 
     self._renderInList = function(){
         var $book = $('.prototype-creator-book').clone();
-
-        var lengthIndicator = Math.round(2 * Math.pow(self.textBytes / (1024 * 1), 1/2));
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
-        $book.find('span').css('width', lengthIndicator + 'px').html('&nbsp;');
+        $book.find('span').css('width', self.lengthIndicator + 'px').html('&nbsp;');
         
         self.authorInstance.$author.find('.books').append($book);
 
