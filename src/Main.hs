@@ -216,7 +216,6 @@ getTextBytes archivePath = do
         (getLengthWithoutMarkup . Zip.eCompressedData)
         (filter entryIsHtmlFile allEntries)
 
-
     where
         entryIsHtmlFile entry =
             let relativePath = map toLower $ Zip.eRelativePath entry
