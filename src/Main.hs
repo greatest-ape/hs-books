@@ -207,17 +207,17 @@ extractNameWithComma creator =
                 else last parts ++ ", " ++ unwords (init parts)
 
 
--- Get the number of bytes the html files in an epub archive take up
+-- Get the number of bytes the text content files in an epub archive take up
 getTextBytes :: FilePath -> IO Integer
 getTextBytes archivePath = do
     allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
 
     return $ sum $ map
         (getLengthWithoutMarkup . Zip.eCompressedData)
-        (filter entryIsHtmlFile allEntries)
+        (filter entryIsTextContentFile allEntries)
 
     where
-        entryIsHtmlFile entry =
+        entryIsTextContentFile entry =
             let relativePath = map toLower $ Zip.eRelativePath entry
             in any (\ending -> ending `isSuffixOf` relativePath)
                 [".html", ".htm", ".xhtml", ".xml"]
