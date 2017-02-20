@@ -10,8 +10,6 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: [
   epub-metadata-4.5,
-  friday-0.2.3.1,
-  friday-juicypixels-0.1.2,
   ratio-int-0.1.2
 ]
 
