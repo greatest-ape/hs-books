@@ -8,7 +8,6 @@ import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
-import qualified Codec.Picture as JuicyPixels
 import qualified Data.Aeson as JSON
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
@@ -18,8 +17,6 @@ import qualified Data.Text.Encoding as Text
 import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
 import qualified Text.HTML.TagSoup as TagSoup
-import qualified Vision.Image as Friday
-import qualified Vision.Primitive.Shape as Friday
 
 import Control.Exception (SomeException, try)
 import Control.Monad (forM_)
@@ -34,7 +31,6 @@ import Data.String (fromString)
 import Data.Tuple (swap)
 import GHC.Generics (Generic)
 import System.Directory (listDirectory, doesFileExist)
-import Vision.Image.JuicyPixels (toFridayRGBA, toJuicyRGBA)
 
 
 -- * Types and instances
@@ -254,7 +250,6 @@ getCoverImage archivePath manifest identifier = try $ do
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
-                    -- success <- saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString
                     success <- saveImagesGD fullsizePath thumbnailPath mediaType imageByteString
 
                     case success of
@@ -276,7 +271,7 @@ getImageData archivePath manifest = do
     return $ do
         manifestItem <- getCoverManifestItem manifest
         maybeByteString <- findFileInArchive archive $ Epub.mfiHref manifestItem
-        return (Epub.mfiMediaType manifestItem, maybeByteString)
+        Just (Epub.mfiMediaType manifestItem, maybeByteString)
 
 
 -- Given an epub manifest, attempts to find a ManifestItem for a cover image
@@ -312,29 +307,6 @@ extractFolders paths = "" : (nub $ paths >>= f) -- The empty string adds the roo
                 if l > 1
                     then scanl' (\a b -> a ++ b ++ "/") "" folderParts
                     else []
-
-
--- Save a fullsize version and a thumbnail of an image with Friday and JuicyPixels
-saveImagesFridayJuicy
-    :: FilePath
-    -> FilePath
-    -> LBS.ByteString
-    -> IO Bool
-saveImagesFridayJuicy fullsizePath thumbnailPath imageByteString = do
-    case JuicyPixels.decodeImage $ LBS.toStrict imageByteString of
-        Left _ -> return False
-        Right juicyImage -> do
-            let fridayImage = toFridayRGBA $ JuicyPixels.convertRGBA8 juicyImage
-                Friday.Z Friday.:. height Friday.:. width = Friday.manifestSize fridayImage
-                (newWidth, newHeight) = calculateThumbnailSize width height
-                newSize = Friday.ix2 newHeight newWidth
-
-            liftIO $ JuicyPixels.writePng thumbnailPath $
-                toJuicyRGBA $ Friday.resize Friday.TruncateInteger newSize fridayImage
-
-            liftIO $ JuicyPixels.writePng fullsizePath $ JuicyPixels.convertRGBA8 juicyImage
-
-            return True
 
 
 -- Save a fullsize version and a thumbnail of an image with GD
