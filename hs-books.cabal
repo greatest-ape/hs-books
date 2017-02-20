@@ -24,10 +24,7 @@ executable hs-books
                      , cryptohash
                      , directory
                      , epub-metadata
-                     , friday
-                     , friday-juicypixels
                      , gd
-                     , JuicyPixels
                      , mtl
                      , split
                      , tagsoup
