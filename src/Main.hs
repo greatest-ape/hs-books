@@ -234,7 +234,7 @@ getCoverImage archivePath manifest identifier = try $ do
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
-                    success <- saveImagesGD thumbnailPath mediaType imageByteString
+                    success <- saveThumbnail thumbnailPath mediaType imageByteString
 
                     case success of
                         True  -> return justCover
@@ -293,13 +293,13 @@ extractFolders paths = "" : (nub $ paths >>= f) -- The empty string adds the roo
                     else []
 
 
--- Save a fullsize version and a thumbnail of an image with GD
-saveImagesGD
+-- Save a thumbnail of an image with GD
+saveThumbnail
     :: FilePath
     -> String
     -> LBS.ByteString
     -> IO Bool
-saveImagesGD thumbnailPath mediaType imageByteString = do
+saveThumbnail thumbnailPath mediaType imageByteString = do
     let imageByteStringStrict = LBS.toStrict imageByteString
 
     image <- case mediaType of
