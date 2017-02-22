@@ -41,7 +41,6 @@ type Identifier = String
 
 
 data Cover = Cover {
-    _fullsizePath  :: String,
     _thumbnailPath :: String
 } deriving (Generic, Show)
 
@@ -69,7 +68,6 @@ instance JSON.ToJSON Book where
 
 
 bookDirectory           = "media/books"
-fullsizeImageDirectory  = "media/covers/full"
 thumbnailDirectory      = "media/covers/small"
 
 jpegQuality             = 80
@@ -224,9 +222,8 @@ getCoverImage
     -> Identifier
     -> IO (Either SomeException (Maybe Cover))
 getCoverImage archivePath manifest identifier = try $ do
-    let fullsizePath   = fullsizeImageDirectory ++ "/" ++ identifier ++ ".png"
-        thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
-        justCover      = Just $ Cover fullsizePath thumbnailPath
+    let thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
+        justCover      = Just $ Cover thumbnailPath
 
     fileExists <- doesFileExist thumbnailPath
 
@@ -237,7 +234,7 @@ getCoverImage archivePath manifest identifier = try $ do
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
-                    success <- saveImagesGD fullsizePath thumbnailPath mediaType imageByteString
+                    success <- saveImagesGD thumbnailPath mediaType imageByteString
 
                     case success of
                         True  -> return justCover
@@ -299,20 +296,16 @@ extractFolders paths = "" : (nub $ paths >>= f) -- The empty string adds the roo
 -- Save a fullsize version and a thumbnail of an image with GD
 saveImagesGD
     :: FilePath
-    -> FilePath
     -> String
     -> LBS.ByteString
     -> IO Bool
-saveImagesGD fullsizePath thumbnailPath mediaType imageByteString = do
+saveImagesGD thumbnailPath mediaType imageByteString = do
     let imageByteStringStrict = LBS.toStrict imageByteString
 
     image <- case mediaType of
         "image/png" -> GD.loadPngByteString imageByteStringStrict
         "image/jpeg" -> GD.loadJpegByteString imageByteStringStrict
         "image/gif" -> GD.loadGifByteString imageByteStringStrict
-
-    -- Save full-size copy
-    -- GD.savePngFile fullsizePath image -- DISABLED
 
     -- Calculate thumbnail dimensions, create and save thumbnail
     (width, height) <- GD.imageSize image
