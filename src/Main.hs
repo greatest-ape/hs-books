@@ -170,19 +170,6 @@ readBook archiveFilename = runErrorT $ do
     }
 
 
--- Take a Creator and extract a name in the format "[FIRST NAME] [LAST NAME]"
-extractNameWithoutComma :: Epub.Creator -> String
-extractNameWithoutComma creator =
-    let name = case Epub.creatorFileAs creator of
-            Just fileAs -> fileAs
-            Nothing     -> Epub.creatorText creator
-        parts = splitOn "," name
-    in
-        if length parts > 1
-            then concat (tail parts) ++ " " ++ head parts
-            else name
-
-
 -- Take a Creator and extract a name in the format "[LAST NAME], [FIRST NAME]"
 extractNameWithComma :: Epub.Creator -> String
 extractNameWithComma creator =
