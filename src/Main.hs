@@ -215,7 +215,7 @@ getNumberOfTextBytes archivePath = do
 
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
--- If found, save it in two sizes and return a Cover
+-- If found, save a thumbnail and return a Cover
 getCoverImage
     :: FilePath
     -> Epub.Manifest
