@@ -145,7 +145,7 @@ readBook archiveFilename = runErrorT $ do
     package         <- Epub.getPackage xmlString
     metadata        <- Epub.getMetadata xmlString
 
-    textBytes <- liftIO $ getTextBytes path
+    textBytes <- liftIO $ getNumberOfTextBytes path
 
     eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest identifier
     let maybeCoverImage = case eitherMaybeCoverImage of
@@ -189,8 +189,8 @@ extractNameWithComma creator =
 
 
 -- Get the number of bytes the text content files in an epub archive take up
-getTextBytes :: FilePath -> IO Integer
-getTextBytes archivePath = do
+getNumberOfTextBytes :: FilePath -> IO Integer
+getNumberOfTextBytes archivePath = do
     allEntries <- Zip.zEntries . Zip.toArchive <$> LBS.readFile archivePath
 
     return $ sum $ map
