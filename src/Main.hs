@@ -33,6 +33,23 @@ import GHC.Generics (Generic)
 import System.Directory (listDirectory, doesFileExist)
 
 
+
+-- * Settings
+
+
+bookDirectory           = "media/books"
+thumbnailDirectory      = "media/covers/small"
+
+jpegQuality             = 80
+
+filenameCachePath       = ".filename-cache"
+jsonCachePath           = ".json-cache"
+
+imageMaxWidth  = 16 * 15
+imageMaxHeight = 16 * 15
+
+
+
 -- * Types and instances
 
 
@@ -61,22 +78,6 @@ instance JSON.ToJSON Cover where
 
 instance JSON.ToJSON Book where
     toEncoding = JSON.genericToEncoding JSON.defaultOptions
-
-
-
--- * Settings
-
-
-bookDirectory           = "media/books"
-thumbnailDirectory      = "media/covers/small"
-
-jpegQuality             = 80
-
-filenameCachePath       = ".filename-cache"
-jsonCachePath           = ".json-cache"
-
-imageMaxWidth  = 16 * 15
-imageMaxHeight = 16 * 15
 
 
 
