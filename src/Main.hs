@@ -301,12 +301,7 @@ saveThumbnail
     -> LBS.ByteString
     -> IO Bool
 saveThumbnail thumbnailPath mediaType imageByteString = do
-    let imageByteStringStrict = LBS.toStrict imageByteString
-
-    image <- case mediaType of
-        "image/png" -> GD.loadPngByteString imageByteStringStrict
-        "image/jpeg" -> GD.loadJpegByteString imageByteStringStrict
-        "image/gif" -> GD.loadGifByteString imageByteStringStrict
+    image <- getImageLoader mediaType $ LBS.toStrict imageByteString
 
     -- Calculate thumbnail dimensions, create and save thumbnail
     (width, height) <- GD.imageSize image
@@ -315,6 +310,12 @@ saveThumbnail thumbnailPath mediaType imageByteString = do
     GD.saveJpegFile jpegQuality thumbnailPath thumbnail
 
     return True
+
+    where
+        getImageLoader :: String -> (BS.ByteString -> IO GD.Image)
+        getImageLoader "image/png"  = GD.loadPngByteString
+        getImageLoader "image/jpeg" = GD.loadJpegByteString
+        getImageLoader "image/gif"  = GD.loadGifByteString
 
 
 -- On the basis of given dimensions and settings (max sizes), calculate a
