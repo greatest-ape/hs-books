@@ -70,6 +70,10 @@ a:hover, a:active, a:focus {
         font-weight: normal;
         line-height: 1.5rem;
     }
+        #books .book .language {
+            color: #888;
+            font-size: 0.75rem;
+        }
         #books .book .length-indicator {
             background-color: #ccc;
             display: inline-block;
@@ -112,7 +116,11 @@ a:hover, a:active, a:focus {
                 line-height: 1.5rem;
                 margin-top: 0.5rem;
             }
-                #creators .creator .books .book span {
+                #creators .creator .books .book .language {
+                    color: #888;
+                    font-size: 0.75rem;
+                }
+                #creators .creator .books .book .length-indicator {
                     background-color: #ccc;
                     display: inline-block;
                     margin-left: 0.0rem;

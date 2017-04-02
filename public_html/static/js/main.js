@@ -39,6 +39,29 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
         self.$bookInList.hide();
     }
 
+    self.languageFullName = function(){
+        var lang = null;
+
+        if (self.languages.length > 0) {
+            switch (self.languages[0].substr(0, 2)) {
+                case 'en':
+                    lang = 'English';
+                    break;
+                case 'fr':
+                    lang = 'French';
+                    break;
+                case 'de':
+                    lang = 'German';
+                    break;
+                case 'sv':
+                    lang = 'Swedish';
+                    break;
+            }
+        }
+
+        return lang;
+    }
+
     self._renderWithImage = function(){
         var $book = $('.prototype-book').clone();
 
@@ -51,6 +74,7 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
 
         $book.find('.creator').html(self.author);
         $book.find('.title a').html(self.title).attr("href", self.path);
+        $book.find('.title .language').html(self.languageFullName());
         $book.find('.title .length-indicator').css('width', self.lengthIndicator + 'px').html('&nbsp;');
 
         $('#books').append($book);
@@ -63,7 +87,8 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
         
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
-        $book.find('span').css('width', self.lengthIndicator + 'px').html('&nbsp;');
+        $book.find('.length-indicator').css('width', self.lengthIndicator + 'px').html('&nbsp;');
+        $book.find('.language').html(self.languageFullName());
         
         self.authorInstance.$author.find('.books').append($book);
 
