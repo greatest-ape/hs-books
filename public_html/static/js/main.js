@@ -130,7 +130,7 @@ var Author = function($, name, books){
         })
 
         var authorMatch = keywords.every(function(keyword){
-            return self.name.toLowerCase().indexOf(keyword) > -1
+            return self.name.toLowerCase().indexOf(keyword) > -1;
         })
 
         // Start with hiding everything
