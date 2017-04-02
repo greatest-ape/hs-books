@@ -223,7 +223,7 @@ var App = function($, books){
 
         $('#filter').show();
 
-        self._makeAuthorsGoToBottom();
+        self._makeAuthorsAsTallAsBooks();
     };
 
     self.search = function(query){
@@ -292,9 +292,9 @@ var App = function($, books){
         });
     };
     
-    self._makeAuthorsGoToBottom = function(){
+    self._makeAuthorsAsTallAsBooks = function(){
         if ($(window).width() > 650){
-            $('#creators').height($(document).height());
+            $('#creators').height($('#books').height());
         }
     };
     
@@ -317,6 +317,8 @@ var App = function($, books){
                 else {
                     app.search(query);
                 }
+
+                app._makeAuthorsAsTallAsBooks();
             });
         });
     });
