@@ -1,3 +1,20 @@
+var HS_BOOKS_LANGUAGES_DICT = {
+    'en': 'English',
+    'fr': 'French',
+    'de': 'German',
+    'es': 'Spanish',
+    'sv': 'Swedish'
+}
+
+var HS_BOOKS_LANGUAGES_ARRAY = Object.keys(HS_BOOKS_LANGUAGES_DICT).map(function(key){
+    return HS_BOOKS_LANGUAGES_DICT[key];
+});
+
+var HS_BOOKS_LANGUAGES_ARRAY_LOWERCASE = HS_BOOKS_LANGUAGES_ARRAY.map(function(language){
+    return language.toLowerCase();
+});
+
+
 var Book = function($, title, path, cover, author, languages, textBytes, authorInstance){
     var self = {};
 
@@ -33,6 +50,12 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
             return inTitle || isLanguage;
         })
     }
+
+    self.matchesLanguage = function(keywords){
+        return keywords.some(function(keyword){
+            return self.language ? self.language.toLowerCase() == keyword: false;
+        })
+    }
     
     self.show = function(){
         self.$bookWithImage.show();
@@ -45,26 +68,15 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
     }
 
     self.getLanguage = function(languages){
-        var lang = null;
-
         if (languages.length > 0) {
-            switch (self.languages[0].substr(0, 2)) {
-                case 'en':
-                    lang = 'English';
-                    break;
-                case 'fr':
-                    lang = 'French';
-                    break;
-                case 'de':
-                    lang = 'German';
-                    break;
-                case 'sv':
-                    lang = 'Swedish';
-                    break;
+            var code = languages[0].substr(0, 2);
+
+            if (code in HS_BOOKS_LANGUAGES_DICT){
+                return HS_BOOKS_LANGUAGES_DICT[code];
             }
         }
 
-        return lang;
+        return null;
     }
 
     self._renderWithImage = function(){
@@ -124,36 +136,50 @@ var Author = function($, name, books){
         self.render();
     }
 
+    // This code is not nice. Probably, the language should be detected
+    // and seperately sent to the various comparison functions and not
+    // be included as a keyword
     self.showOnMatch = function(keywords){
         var matchingBooks = self.books.filter(function(book){
             return book.matchesKeywords(keywords);
         })
 
-        var authorMatch = keywords.every(function(keyword){
+        var authorMatch = keywords.filter(function(keyword){
+            return HS_BOOKS_LANGUAGES_ARRAY_LOWERCASE.indexOf(keyword) == -1;
+        }).every(function(keyword){
             return self.name.toLowerCase().indexOf(keyword) > -1;
+        })
+
+        var languageSearch = keywords.some(function(keyword){
+            return HS_BOOKS_LANGUAGES_ARRAY_LOWERCASE.indexOf(keyword) > -1;
         })
 
         // Start with hiding everything
         self.$author.hide();
         $.each(self.books, function(i, book) { book.hide() });
 
-        // Display all books from this author
-        if (authorMatch) {
-            self.$author.show();
+        if (authorMatch){
+            if (languageSearch){
+                var matchingLanguageBooks = self.books.filter(function(book){
+                    return book.matchesLanguage(keywords);
+                })
 
-            $.each(self.books, function(i, book) { book.show() });
+                if (matchingLanguageBooks.length > 0){
+                    self.$author.show();
+
+                    $.each(matchingLanguageBooks, function(i, book) { book.show() });
+                }
+            }
+            else {
+                self.$author.show();
+
+                $.each(self.books, function(i, book) { book.show() });
+            }
         }
-        // Display all matching books
         else if (matchingBooks.length > 0) {
             self.$author.show();
 
             $.each(matchingBooks, function(i, book) { book.show() });
-        }
-        // Hide author and books
-        else {
-            self.$author.hide();
-
-            $.each(self.books, function(i, book) { book.hide() });
         }
     }
 
