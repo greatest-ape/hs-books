@@ -12,10 +12,12 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
     self.$bookWithImage = null;
     self.$bookInList = null;
 
+    self.language  = null;
     self.lengthIndicator = 0;
 
     self.init = function(){
         self.lengthIndicator = Math.round(2 * Math.pow(self.textBytes / (1024 * 1), 1/2));
+        self.language  = self.getLanguage(self.languages);
     }
 
     self.render = function(){
@@ -25,7 +27,10 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
 
     self.matchesKeywords = function(keywords){
         return keywords.every(function(keyword){
-            return self.title.toLowerCase().indexOf(keyword) > -1
+            var inTitle = self.title.toLowerCase().indexOf(keyword) > -1;
+            var isLanguage = self.language ? self.language.toLowerCase() == keyword: false;
+
+            return inTitle || isLanguage;
         })
     }
     
@@ -39,10 +44,10 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
         self.$bookInList.hide();
     }
 
-    self.languageFullName = function(){
+    self.getLanguage = function(languages){
         var lang = null;
 
-        if (self.languages.length > 0) {
+        if (languages.length > 0) {
             switch (self.languages[0].substr(0, 2)) {
                 case 'en':
                     lang = 'English';
@@ -74,7 +79,7 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
 
         $book.find('.creator').html(self.author);
         $book.find('.title a').html(self.title).attr("href", self.path);
-        $book.find('.title .language').html(self.languageFullName());
+        $book.find('.title .language').html(self.language);
         $book.find('.title .length-indicator').css('width', self.lengthIndicator + 'px').html('&nbsp;');
 
         $('#books').append($book);
@@ -88,7 +93,7 @@ var Book = function($, title, path, cover, author, languages, textBytes, authorI
         $book.removeClass('prototype-creator-book').addClass('book');
         $book.find('a').attr('href', self.path).html(self.title);
         $book.find('.length-indicator').css('width', self.lengthIndicator + 'px').html('&nbsp;');
-        $book.find('.language').html(self.languageFullName());
+        $book.find('.language').html(self.language);
         
         self.authorInstance.$author.find('.books').append($book);
 
