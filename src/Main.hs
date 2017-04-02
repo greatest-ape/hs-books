@@ -69,6 +69,7 @@ data Book = Book {
     _creators   :: [String],
     _dates      :: [String],
     _publishers :: [String],
+    _languages  :: [String],
     _textBytes  :: Integer
 } deriving (Generic, Show)
 
@@ -157,6 +158,7 @@ readBook archiveFilename = runErrorT $ do
         creators    = map extractNameWithComma $ Epub.metaCreators metadata
         dates       = map (\(Epub.Date _ text) -> text) $ Epub.metaDates metadata
         publishers  = Epub.metaPublishers metadata
+        languages   = Epub.metaLangs metadata
 
     return $ Book {
         _path       = Text.decodeUtf8 $ Char8.pack path,
@@ -165,6 +167,7 @@ readBook archiveFilename = runErrorT $ do
         _creators   = creators,
         _dates      = dates,
         _publishers = publishers,
+        _languages  = languages,
         _textBytes  = textBytes
     }
 
