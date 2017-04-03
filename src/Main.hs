@@ -257,7 +257,7 @@ getImageData archivePath manifest = do
     archive <- Zip.toArchive <$> LBS.readFile archivePath
 
     return $ do
-        manifestItem <- getCoverManifestItem manifest
+        manifestItem    <- getCoverManifestItem manifest
         maybeByteString <- findFileInArchive archive $ Epub.mfiHref manifestItem
         Just (Epub.mfiMediaType manifestItem, maybeByteString)
 
