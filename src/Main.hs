@@ -1,5 +1,6 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DefaultSignatures #-}
 
 module Main where
 
@@ -12,6 +13,7 @@ import qualified Data.Aeson as JSON
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.Serialize as Serialize
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import qualified Graphics.GD as GD
@@ -45,12 +47,17 @@ jpegQuality             = 80
 filenameCachePath       = ".filename-cache"
 jsonCachePath           = ".json-cache"
 
+cachePath = ".hs-books-cache"
+
 imageMaxWidth  = 16 * 15
 imageMaxHeight = 16 * 15
 
 
 
 -- * Types and instances
+
+data BookWithHash = FileWithHash BS.ByteString Book BS.ByteString
+    deriving (Generic, Show)
 
 
 -- Identifies a cover image
@@ -81,6 +88,8 @@ instance JSON.ToJSON Book where
     toEncoding = JSON.genericToEncoding JSON.defaultOptions
 
 
+instance Serialize.Serialize FileWithHash
+
 
 -- * Start of main program
 
@@ -90,6 +99,13 @@ instance JSON.ToJSON Book where
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
     filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
+
+    oldFilesWithHashes <- head . rights . Serialize.decodeLazy <$> LBS.readFile 
+    
+    newHashes = mapM (\f -> hashlazy <$> LBS.readFile $ bookDirectory ++ "/" ++ f) filenames
+
+    let newFilesWithHashes = zipWith (\f h -> BookWithHash) filenames newHashes
+
 
     -- Check cache, generate JSON anew if necessary
 
