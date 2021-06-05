@@ -15,14 +15,14 @@ This Haskell program extracts meta info and cover images, creates thumbnails of 
 ## Install
 
   * Serve the `html` directory with your web server and enable CGI
-  * Make it readable by the web server, and make `html/media/covers`
+  * Make `html` readable by the web server and make `html/media/covers`
     writeable. There is a script for doing both of those things on Debian:
 
 ```sh
 ./scripts/set-permissions-debian.sh
 ```
 
-  * Compile program, copy binary to `html/app.cgi`
+  * Compile the program and copy the binary to `html/app.cgi`
 
 ```sh
 ./scripts/build-and-install.sh
@@ -31,7 +31,7 @@ This Haskell program extracts meta info and cover images, creates thumbnails of 
 ## Design
 
 There is no database, since any modifications should also be present in
-the epub files. Instead, there is a caching system.
+the epub files. Instead, a caching system is used.
 
 ## Ideas for future
 
