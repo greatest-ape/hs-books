@@ -2,9 +2,14 @@
 
 The Haskell program extracts meta info and cover images, creates thumbnails of those and sends a JSON response to the website, where it is parsed and displayed using Javascript (utilizing the very hip jQuery.)
 
-## Screenshot
+## Screenshots
+
+### Desktop view
 
 ![Desktop screenshot](screenshots/screenshot-1.png?raw=true "Desktop view")
+
+### Mobile view
+
 ![Mobile screenshot](screenshots/screenshot-2.jpg?raw=true "Mobile view")
 
 ## Install
