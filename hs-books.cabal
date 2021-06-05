@@ -1,13 +1,13 @@
 name:                hs-books
 version:             0.1.0.0
-synopsis:            CGI app for displaying a HTML list of .epub books in a directory
+synopsis:            FaaS web app for listing .epub books in a directory
 description:         Please see README.md
-homepage:            https://github.com/githubuser/hs-books#readme
+homepage:            https://github.com/greatest-ape/hs-books
 license:             BSD3
 license-file:        LICENSE
 author:              Joakim Frostegård
 maintainer:          joakim.frostegard@gmail.com
-copyright:           2017-2018 Joakim Frostegård
+copyright:           2017-2021 Joakim Frostegård
 category:            Web
 build-type:          Simple
 cabal-version:       >=1.10
