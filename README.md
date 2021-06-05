@@ -25,7 +25,7 @@ The Haskell program extracts meta info and cover images, creates thumbnails of t
   * Compile program, copy binary to `html/app.cgi`
 
 ```sh
-./scripts/build-copy.sh
+./scripts/build-and-install.sh
 ```
 
 ## Design
