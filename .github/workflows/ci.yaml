@@ -11,4 +11,6 @@ jobs:
           ghc-version: '8.4.4' # Exact version of ghc to use
           enable-stack: true
           stack-version: 'latest'
-      - run: stack build --ghc-options "-O2" 
+      - name: Install dependencies
+        run: sudo apt-get install -y libgd3 libgd-dev
+      - run: stack build
