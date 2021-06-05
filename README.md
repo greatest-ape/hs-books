@@ -38,6 +38,7 @@ the epub files. Instead, a caching system is used.
   * Rewrite frontend in React? Current code is a poor man's
     version
   * Modernize FaaS technology?
+  * Docker: use https://hub.docker.com/r/fpco/stack-build
   * Buttons for forcing reloads
   * Button for clearing search field
   * PDF support (tricky)
