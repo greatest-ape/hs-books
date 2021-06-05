@@ -8,25 +8,34 @@ import qualified Codec.Epub as Epub
 import qualified Codec.Epub.Data.Manifest as Epub
 import qualified Codec.Epub.Data.Metadata as Epub
 import qualified Codec.Epub.Data.Package as Epub
+import qualified Crypto.Hash.MD5 as MD5
 import qualified Data.Aeson as JSON
+import qualified Data.Binary as Binary
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Char8 as Char8
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.ByteString.Base16 as Base16
+import qualified Data.Map.Strict as Map
+import qualified Data.Set as Set
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import qualified Data.Tree.Class as HXT
 import qualified Graphics.GD as GD
 import qualified Network.CGI as CGI
+import qualified Network.URI.Encode as URI
 import qualified Text.HTML.TagSoup as TagSoup
+import qualified Text.XML.HXT.Core as HXT
 
 import Control.Exception (SomeException, try)
+import Control.Arrow
 import Control.Monad (forM_)
 import Control.Monad.Error (ErrorT, runErrorT, liftIO)
-import Crypto.Hash (Digest, SHA256, digestToHexByteString, hashlazy, hash)
+import Data.Aeson ((.=), (.:))
 import Data.Char (toLower)
-import Data.Either (rights)
+import Data.Either (rights, fromRight, isLeft)
 import Data.List (isSuffixOf, isInfixOf, nub, scanl', words, unwords)
 import Data.List.Split (splitOn)
-import Data.Maybe (catMaybes)
+import Data.Maybe (catMaybes, isJust)
 import Data.String (fromString)
 import Data.Tuple (swap)
 import GHC.Generics (Generic)
@@ -38,12 +47,11 @@ import System.Directory (listDirectory, doesFileExist)
 
 
 bookDirectory           = "media/books"
-thumbnailDirectory      = "media/covers/small"
+thumbnailDirectory      = "media/covers"
 
 jpegQuality             = 80
 
-filenameCachePath       = ".filename-cache"
-jsonCachePath           = ".json-cache"
+cachePath               = ".cache"
 
 imageMaxWidth  = 16 * 15
 imageMaxHeight = 16 * 15
@@ -63,7 +71,7 @@ data Cover = Cover {
 
 
 data Book = Book {
-    _path       :: Text.Text,
+    _path       :: String,
     _maybeCover :: Maybe Cover,
     _titles     :: [String],
     _creators   :: [String],
@@ -74,11 +82,45 @@ data Book = Book {
 } deriving (Generic, Show)
 
 
+type FileHash = BS.ByteString
+type FileHashSet = Set.Set (String, FileHash)
+
+data Cache = Cache {
+    _hashes :: FileHashSet,
+    _books  :: Map.Map String Book
+} deriving (Generic, Show)
+
+
+instance Binary.Binary Cover
+instance Binary.Binary Book
+instance Binary.Binary Cache
+
+
 instance JSON.ToJSON Cover where
     toEncoding = JSON.genericToEncoding JSON.defaultOptions
 
+-- Custom instance to prevent encoding errors
 instance JSON.ToJSON Book where
-    toEncoding = JSON.genericToEncoding JSON.defaultOptions
+    toJSON book = JSON.object [
+        "_path" .= (Text.decodeUtf8 $ Char8.pack $ _path book),
+        "_maybeCover" .= _maybeCover book,
+        "_titles" .= _titles book,
+        "_creators" .= _creators book,
+        "_dates" .= _dates book,
+        "_publishers" .= _publishers book,
+        "_languages" .= _languages book,
+        "_textBytes" .= _textBytes book
+        ]
+    toEncoding book = JSON.pairs (
+        "_path" .= (Text.decodeUtf8 $ Char8.pack $ _path book) <>
+        "_maybeCover" .= _maybeCover book <>
+        "_titles" .= _titles book <>
+        "_creators" .= _creators book <>
+        "_dates" .= _dates book <>
+        "_publishers" .= _publishers book <>
+        "_languages" .= _languages book <>
+        "_textBytes" .= _textBytes book
+        )
 
 
 
@@ -89,67 +131,109 @@ instance JSON.ToJSON Book where
 -- and send them to the client through CGI
 main :: IO ()
 main = CGI.runCGI $ CGI.handleErrors $ do
-    filenames <- filter (".epub" `isSuffixOf`) <$> (CGI.liftIO $ listDirectory bookDirectory)
+    currentFilenames <- map
+        (\f -> bookDirectory ++ "/" ++ f) .
+        filter (".epub" `isSuffixOf`) <$>
+        (CGI.liftIO $ listDirectory bookDirectory)
 
-    -- Check cache, generate JSON anew if necessary
+    currentFileHashes <- map MD5.hashlazy <$>
+        liftIO (mapM LBS.readFile currentFilenames)
 
-    let filenameHash = digestToHexByteString $ (hash $ Char8.pack $ show filenames :: Digest SHA256)
+    let currentHashes = Set.fromList $ zip currentFilenames currentFileHashes
 
-    forceReload <- CGI.getInput "force-reload"
+    forceReload <- isJust <$> CGI.getInput "force-reload"
+    forceReloadFull <- isJust <$> CGI.getInput "force-reload-full"
+    oldOrEmptyCache <- fromRight createEmptyCache <$> liftIO readCache
 
-    json <- case forceReload of
-        Just _  -> generateJsonAndSaveState filenames  filenameHash
-        Nothing -> do
-            eitherJsonCache <- liftIO $ readJsonCache filenameHash
-
-            -- Either use cache JSON or generate it anew
-            case eitherJsonCache of
-                Left _          -> generateJsonAndSaveState filenames filenameHash
-                Right jsonCache -> return $ LBS.fromStrict jsonCache
+    books <- getBooksWithFilenameComparison forceReload currentHashes $
+        if forceReloadFull then createEmptyCache else oldOrEmptyCache
 
     -- CGI output
 
     CGI.setHeader "Content-type" "application/json"
-    CGI.outputFPS json
+    CGI.outputFPS $ JSON.encode books
 
     where
-        -- Attempt to retrieve JSON from the cache
-        -- Fails when files can't be or and when the filename hashes don't match
-        readJsonCache :: BS.ByteString -> IO (Either SomeException BS.ByteString)
-        readJsonCache filenameHash = try $ do
-            filenameCache <- BS.readFile filenameCachePath
-            jsonCache     <- BS.readFile jsonCachePath
 
-            if filenameCache == filenameHash
-                then return jsonCache
-                else error "Filenames not matching hashed filenames"
+        createEmptyCache :: Cache
+        createEmptyCache = Cache {
+            _hashes = Set.empty,
+            _books = Map.empty
+        }
 
-        -- Use rest of program to create books and generate JSON from filenames
-        -- Save the results in cache
-        generateJsonAndSaveState filenames filenameHash = do
-            json <- JSON.encode . rights <$> (CGI.liftIO $ mapM readBook filenames)
+        -- TODO improve code
+        readCache :: IO (Either SomeException Cache)
+        readCache = try $
+            fromRight createEmptyCache <$> Binary.decodeFileOrFail cachePath
 
-            liftIO $ BS.writeFile filenameCachePath filenameHash
-            liftIO $ LBS.writeFile jsonCachePath json
+        -- If filenames haven't changed, just return cached books.
+        -- Otherwise, call getBooksAndUpdateCache
+        getBooksWithFilenameComparison
+            :: Bool
+            -> FileHashSet
+            -> Cache
+            -> CGI.CGI [Book]
+        getBooksWithFilenameComparison forceReload currentHashes oldCache = do
+            let oldFilenames = Set.map fst $ _hashes oldCache
+            let newFilenames = Set.map fst currentHashes
 
-            return json
+            if oldFilenames == newFilenames && not forceReload
+                then return $ Map.elems $ _books oldCache
+                else getBooksAndUpdateCache currentHashes oldCache
+
+        -- Process any new books, save cache, return new books
+        getBooksAndUpdateCache
+            :: FileHashSet
+            -> Cache
+            -> CGI.CGI [Book]
+        getBooksAndUpdateCache currentHashes oldCache = do
+            let oldHashes = _hashes oldCache
+            let oldBooks = _books oldCache
+            let newHashes = Set.difference currentHashes oldHashes
+            let unchangedHashes = Set.intersection currentHashes oldHashes
+
+            newBookList <- readBooks $ map fst $ Set.toList newHashes
+
+            let unchangedBookList = catMaybes $ map
+                    (\filename -> Map.lookup filename oldBooks)
+                    (map fst $ Set.toList unchangedHashes)
+
+            let newBookMap = Map.fromList $
+                    map (\b -> (_path b, b)) newBookList
+            let unchangedBookMap = Map.fromList $
+                    map (\b -> (_path b, b)) unchangedBookList
+            let fullBookMap = Map.union newBookMap unchangedBookMap
+
+            let cache = Cache {
+                _hashes = Set.union unchangedHashes newHashes,
+                _books  = fullBookMap
+            }
+
+            liftIO $ Binary.encodeFile cachePath cache
+
+            return $ Map.elems fullBookMap
+
+        readBooks :: [String] -> CGI.CGI [Book]
+        readBooks filePaths = rights <$>
+            (CGI.liftIO $ mapM readBook filePaths)
 
 
 -- Attempt to create a Book from a file path to an epub file
 readBook :: String -> IO (Either String Book)
-readBook archiveFilename = runErrorT $ do
-    let path       = bookDirectory ++ "/" ++ archiveFilename
-        hash       = hashlazy $ fromString archiveFilename :: Digest SHA256
-        identifier = Char8.unpack $ digestToHexByteString hash
+readBook archivePath = runErrorT $ do
+    let path       = archivePath
+        hash       = MD5.hashlazy $ fromString path
+        identifier = Char8.unpack $ Base16.encode hash
 
     xmlString       <- Epub.getPkgXmlFromZip path
     manifest        <- Epub.getManifest xmlString
     package         <- Epub.getPackage xmlString
     metadata        <- Epub.getMetadata xmlString
 
-    textBytes <- liftIO $ getNumberOfTextBytes path
+    maybeCoverTag   <- liftIO $ getMetaCoverTag xmlString
+    textBytes       <- liftIO $ getNumberOfTextBytes path
 
-    eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest identifier
+    eitherMaybeCoverImage <- liftIO $ getCoverImage path manifest maybeCoverTag identifier
     let maybeCoverImage = case eitherMaybeCoverImage of
             Right maybeCoverImage -> maybeCoverImage
             Left _                -> Nothing
@@ -161,7 +245,7 @@ readBook archiveFilename = runErrorT $ do
         languages   = Epub.metaLangs metadata
 
     return $ Book {
-        _path       = Text.decodeUtf8 $ Char8.pack path,
+        _path       = archivePath,
         _maybeCover = maybeCoverImage,
         _titles     = titles,
         _creators   = creators,
@@ -216,6 +300,30 @@ getNumberOfTextBytes archivePath = do
 
 -- * Cover images
 
+-- Look for meta tag with name="cover" pointing to cover image.
+-- Unfortunately runs in the IO monad because of HXT
+getMetaCoverTag :: String -> IO (Maybe String)
+getMetaCoverTag xmlString = do
+    results <- HXT.runX $
+        HXT.configSysVars []
+        >>>
+        HXT.readString [] xmlString
+        >>>
+        HXT.processChildren (HXT.deep $
+            HXT.isElem >>> HXT.hasName "meta"
+            >>>
+            HXT.hasAttrValue "name" (isInfixOf "cover" . map toLower)
+            >>>
+            HXT.getAttrValue0 "content" >>> HXT.mkText
+            )
+
+    -- Extract one text value from tree or nothing
+    return $ maybeHead $ results >>= foldr getHxtText []
+
+    where
+        getHxtText (HXT.XText s) acc = s : acc
+        getHxtText _             acc = acc
+
 
 -- Given an archive path, a epub manifest and a string identifier try to find
 -- a cover image
@@ -223,9 +331,10 @@ getNumberOfTextBytes archivePath = do
 getCoverImage
     :: FilePath
     -> Epub.Manifest
+    -> Maybe String
     -> Identifier
     -> IO (Either SomeException (Maybe Cover))
-getCoverImage archivePath manifest identifier = try $ do
+getCoverImage archivePath manifest maybeCoverTag identifier = try $ do
     let thumbnailPath  = thumbnailDirectory ++ "/" ++ identifier ++ ".jpg"
         justCover      = Just $ Cover thumbnailPath
 
@@ -234,7 +343,7 @@ getCoverImage archivePath manifest identifier = try $ do
     if fileExists
         then return justCover
         else do
-            imageData <- getImageData archivePath manifest
+            imageData <- getImageData archivePath maybeCoverTag manifest
 
             case imageData of
                 Just (mediaType, imageByteString) -> do
@@ -251,26 +360,50 @@ getCoverImage archivePath manifest identifier = try $ do
 -- return its data as a ByteString
 getImageData
     :: FilePath
+    -> Maybe String
     -> Epub.Manifest
     -> IO (Maybe (String, LBS.ByteString))
-getImageData archivePath manifest = do
+getImageData archivePath maybeCoverTag manifest = do
     archive <- Zip.toArchive <$> LBS.readFile archivePath
 
     return $ do
-        manifestItem    <- getCoverManifestItem manifest
-        maybeByteString <- findFileInArchive archive $ Epub.mfiHref manifestItem
+        manifestItem    <- getCoverManifestItem maybeCoverTag manifest
+        maybeByteString <- tryTwo
+            (findFileInArchive archive $ Epub.mfiHref manifestItem)
+            (findFileInArchive archive $ URI.decode $ Epub.mfiHref manifestItem)
+
         Just (Epub.mfiMediaType manifestItem, maybeByteString)
+    
+    where
+        tryTwo (Just a) _ = Just a
+        tryTwo (Nothing) b = b
 
 
 -- Given an epub manifest, attempts to find a ManifestItem for a cover image
-getCoverManifestItem :: Epub.Manifest -> Maybe Epub.ManifestItem
-getCoverManifestItem (Epub.Manifest items) =
-    maybeHead $ filter (\i -> isImage i && (hasCoverInHref i || hasCoverInID i)) items
-
+getCoverManifestItem
+    :: Maybe String
+    -> Epub.Manifest
+    -> Maybe Epub.ManifestItem
+getCoverManifestItem maybeCoverTag (Epub.Manifest items) =
+    maybeHead $ filter (\i ->
+        isImage i && (
+            hasCoverInHref i ||
+            hasCoverInID i ||
+            matchesMetaTag i maybeCoverTag
+            )
+        ) items
     where
-        isImage manifestItem        = "image" `isInfixOf` Epub.mfiMediaType manifestItem
-        hasCoverInHref manifestItem = "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
-        hasCoverInID manifestItem   = "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
+        isImage manifestItem =
+            "image" `isInfixOf` Epub.mfiMediaType manifestItem
+
+        hasCoverInHref manifestItem =
+            "cover" `isInfixOf` map toLower (Epub.mfiHref manifestItem)
+
+        hasCoverInID manifestItem =
+            "cover" `isInfixOf` map toLower (Epub.mfiId manifestItem)
+
+        matchesMetaTag manifestItem (Just t) = t == Epub.mfiId manifestItem
+        matchesMetaTag manifestItem Nothing  = False
 
 
 -- Extract a file in a zip archive by the file path.

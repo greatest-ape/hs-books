@@ -305,8 +305,14 @@ var App = function($, books){
 
 (function($){
     $(function(){
+        var start = new Date();
+
         $.getJSON('app.cgi', function(books){
             var app = App($, books);
+
+            var finished = new Date();
+
+            console.log("Fetched data in " + String((finished - start) / 1000) + "s");
 
             $('#filter input').on('change', function(){
                 var query = $(this).val();

@@ -1,3 +1,3 @@
 #!/bin/bash
 
-cp .stack-work/install/*/lts-7.14/*/bin/hs-books public_html/app.cgi
+cp .stack-work/install/*/lts-12.18/*/bin/hs-books html/app.cgi

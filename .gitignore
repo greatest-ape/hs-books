@@ -7,8 +7,10 @@
 *.epub
 *.cgi
 
-public_html/media/**/*.png
-public_html/media/**/*.jpg
+.htaccess
+.htpasswd
 
-public_html/.filename-cache
-public_html/.json-cache
+html/media/**/*.png
+html/media/**/*.jpg
+
+html/.cache
