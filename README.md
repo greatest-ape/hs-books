@@ -1,6 +1,6 @@
 # FaaS web app for listing .epub books in a directory
 
-The Haskell program extracts meta info and cover images, creates thumbnails of those and sends a JSON response to the website, where it is parsed and displayed using Javascript (utilizing state-of-the-art framework jQuery).
+This Haskell program extracts meta info and cover images, creates thumbnails of those and sends a JSON response to the website, where it is parsed and displayed using Javascript (utilizing state-of-the-art framework jQuery).
 
 ## Screenshots
 
@@ -37,6 +37,7 @@ the epub files. Instead, there is a caching system.
 
   * Rewrite frontend in React. Current code is basically a poor man's
     version
+  * Modernize FaaS technology?
   * Buttons for forcing reloads
   * Button for clearing search field
   * PDF support (tricky)
