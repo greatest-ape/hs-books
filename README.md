@@ -1,6 +1,6 @@
 # FaaS web app for listing .epub books in a directory
 
-This Haskell program extracts meta info and cover images, creates thumbnails of those and sends a JSON response to the website, where it is parsed and displayed using Javascript (utilizing state-of-the-art framework jQuery).
+This Haskell program extracts meta info and cover images, creates thumbnails of those and sends a JSON response to the client, which parses and displays it.
 
 ## Screenshots
 
@@ -14,7 +14,7 @@ This Haskell program extracts meta info and cover images, creates thumbnails of 
 
 ## Install
 
-  * Serve the `html` directory with your web server and enable CGI (our FaaS technology of choice) there
+  * Serve the `html` directory with your web server and enable CGI
   * Make it readable by the web server, and make `html/media/covers`
     writeable. There is a script for doing both of those things on Debian:
 
@@ -33,9 +33,9 @@ This Haskell program extracts meta info and cover images, creates thumbnails of 
 There is no database, since any modifications should also be present in
 the epub files. Instead, there is a caching system.
 
-## Future ideas
+## Ideas for future
 
-  * Rewrite frontend in React. Current code is basically a poor man's
+  * Rewrite frontend in React? Current code is a poor man's
     version
   * Modernize FaaS technology?
   * Buttons for forcing reloads
